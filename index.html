@@ -1,0 +1,2373 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="data:," />
+    <title>ChipWorks</title>
+    <style>
+      :root{
+        --bg:#14171c; --card:#1f252d; --card2:#242c36; --ink:#e8e6e1; --muted:#9aa3ad;
+        --line:#39424e; --accent:#ff7a1a; --accent-dark:#cc5f0e;
+        --green:#4ade80; --green-bg:#17301f; --green-ink:#bbf7d0;
+        --red:#f87171; --red-bg:#3d1a1a; --red-ink:#fecaca;
+        --gray-bg:#242c36; --yellow-bg:#33300f; --yellow-ink:#fcd34d;
+        --led-bg:#0a0c0e;
+        --shadow:0 2px 0 rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05);
+        --radius:6px;
+        color-scheme:dark;
+      }
+      *{ box-sizing:border-box; }
+      html{ -webkit-text-size-adjust:100%; touch-action:manipulation; }
+      body{
+        margin:0; color:var(--ink);
+        background-color:var(--bg);
+        background-image:
+          linear-gradient(180deg, rgba(255,255,255,.025), rgba(0,0,0,.12)),
+          linear-gradient(rgba(154,163,173,.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(154,163,173,.05) 1px, transparent 1px);
+        background-size:auto, 28px 28px, 28px 28px;
+        font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+        font-size:16px; line-height:1.45;
+        user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+        touch-action:manipulation;
+      }
+      h1,h2,h3,.group-title,.machine-name,.order-title,.mobile-title{
+        font-family:"Arial Narrow", Arial, sans-serif;
+        text-transform:uppercase; letter-spacing:.07em;
+      }
+      button{ font:inherit; cursor:pointer; min-height:44px; border-radius:var(--radius); border:1px solid var(--line); background:var(--card2); color:var(--ink); padding:8px 14px; touch-action:manipulation; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
+      button:disabled{ opacity:.45; cursor:not-allowed; }
+      button:focus-visible, summary:focus-visible, textarea:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
+      button:active:not(:disabled){ transform:scale(.97); }
+      summary, a, input, select, label{ touch-action:manipulation; }
+
+      /* ---------- Header HUD ---------- */
+      .topbar{
+        position:sticky; top:0; z-index:50;
+        background:#1a1f26;
+        border-bottom:2px solid var(--line);
+        box-shadow:0 2px 0 rgba(0,0,0,.5);
+        padding:10px 14px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+      }
+      .chip{
+        background:var(--gray-bg); border:1px solid var(--line); border-radius:4px; padding:7px 12px;
+        font-size:.82rem; letter-spacing:.04em; display:inline-flex; gap:7px; align-items:baseline; white-space:nowrap;
+      }
+      .chip strong{ font-size:1.02rem; font-variant-numeric:tabular-nums; display:inline-block; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+      #hMoney{ min-width:78px; }
+      #hRate{ min-width:68px; }
+      .chip.money{ background:var(--led-bg); border-color:#4a3520; box-shadow:inset 0 2px 8px rgba(0,0,0,.9), inset 0 0 0 1px #000; color:#9aa3ad; }
+      .chip.money strong{ color:#ff8c2e; font-size:1.22rem; text-shadow:0 0 6px rgba(255,122,26,.45); }
+      .chip .bonus{ color:var(--green); font-weight:600; font-size:.85rem; }
+      @keyframes moneyPulse{ 0%{ transform:scale(1);} 30%{ transform:scale(1.08); } 100%{ transform:scale(1);} }
+      .chip.money.pulse{ animation:moneyPulse .6s ease; }
+
+      /* ---------- Tutorial ---------- */
+      .tutorial{ max-width:1460px; margin:14px auto 0; padding:0 14px; }
+      .tutorial-inner{
+        background:#2a2113; border:1px solid #7a5a1e; border-top:4px solid var(--accent); border-radius:var(--radius);
+        padding:12px 16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+        box-shadow:var(--shadow);
+      }
+      .tutorial-from{ font-family:"Arial Narrow",Arial,sans-serif; font-weight:700; letter-spacing:.1em; color:var(--accent); font-size:.8rem; width:100%; }
+      .tutorial-inner p{ margin:0; flex:1 1 260px; font-weight:600; color:#f3e2b3; }
+      .tutorial-inner button{ min-height:40px; background:var(--card2); }
+
+      /* ---------- Layout ---------- */
+      .layout{
+        max-width:1460px; margin:0 auto; padding:14px;
+        display:grid; grid-template-columns:330px minmax(0,1fr) 350px; gap:16px; align-items:start;
+      }
+      .col{ display:flex; flex-direction:column; gap:16px; min-width:0; }
+      .card{
+        background:linear-gradient(180deg, var(--card2), var(--card));
+        border-radius:var(--radius); box-shadow:var(--shadow);
+        padding:16px; border:1px solid var(--line);
+      }
+      .card h2{ margin:0 0 12px; font-size:1.12rem; color:#f2efe9; border-bottom:1px solid var(--line); padding-bottom:8px; }
+      .card h3.sub{ margin:16px 0 8px; font-size:.92rem; color:var(--muted); }
+      .hint{ color:var(--muted); font-size:.88rem; margin:10px 0 0; }
+
+      /* ---------- Gather buttons ---------- */
+      .gather-grid{ display:flex; flex-direction:column; gap:10px; }
+      .gather-btn{
+        position:relative; overflow:visible; text-align:left; width:100%;
+        display:flex; align-items:center; gap:12px; padding:12px 16px;
+        font-size:1.02rem; font-weight:700; border:1px solid var(--line); min-height:58px;
+        background:var(--card2); border-left:5px solid var(--muted);
+      }
+      .gather-btn .g-icon{ font-size:1.6rem; line-height:1; }
+      .gather-btn .g-per{ margin-left:auto; font-weight:600; color:var(--muted); font-size:.9rem; min-width:86px; text-align:right; font-variant-numeric:tabular-nums; font-family:ui-monospace,Menlo,Consolas,monospace; }
+      .gather-btn.silicon{ border-left-color:#a5b4fc; } .gather-btn.copper{ border-left-color:#fb923c; }
+      .gather-btn.plastic{ border-left-color:#f472b6; } .gather-btn.glass{ border-left-color:#38bdf8; }
+      .gather-btn.lithium{ border-left-color:#facc15; }
+      @keyframes squash{ 0%{transform:scale(1);} 40%{transform:scale(.94);} 100%{transform:scale(1);} }
+      .gather-btn.squash{ animation:squash .18s ease; }
+      .float-num{
+        position:absolute; pointer-events:none; font-weight:800; color:var(--accent);
+        font-size:1.15rem; z-index:5; animation:floatUp .9s ease-out forwards; text-shadow:0 1px 0 #000;
+        font-family:ui-monospace,Menlo,Consolas,monospace;
+      }
+      @keyframes floatUp{ from{ opacity:1; transform:translateY(0);} to{ opacity:0; transform:translateY(-46px);} }
+
+      /* ---------- Inventory ---------- */
+      .inv-row{ display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px dashed var(--line); flex-wrap:wrap; }
+      .inv-row:last-child{ border-bottom:none; }
+      .inv-icon{ font-size:1.3rem; width:30px; text-align:center; }
+      .inv-name{ font-weight:600; flex:1 1 110px; }
+      .inv-count{ font-weight:800; font-variant-numeric:tabular-nums; display:inline-block; min-width:60px; text-align:right; font-family:ui-monospace,Menlo,Consolas,monospace; }
+      .inv-rate{ font-size:.85rem; font-weight:600; min-width:74px; text-align:right; font-variant-numeric:tabular-nums; font-family:ui-monospace,Menlo,Consolas,monospace; }
+      .rate-pos{ color:var(--green); } .rate-neg{ color:var(--red); } .rate-zero{ color:var(--muted); }
+      .inv-sell{ display:flex; gap:6px; width:100%; }
+      .inv-sell button{ flex:1; min-height:38px; padding:4px 8px; font-size:.9rem; background:var(--gray-bg); }
+      .prod-row{ display:flex; gap:10px; align-items:center; padding:5px 0; font-size:.95rem; }
+      .prod-row .p-count{ margin-left:auto; font-weight:700; font-variant-numeric:tabular-nums; font-family:ui-monospace,Menlo,Consolas,monospace; }
+
+      /* ---------- Factory ---------- */
+      .factory-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+      .factory-head h2{ margin:0; border-bottom:none; padding-bottom:0; }
+      .bulk-toggle{ display:flex; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+      .bulk-toggle button{ border:none; border-radius:0; min-height:40px; padding:6px 18px; font-weight:700; background:var(--card2); }
+      .bulk-toggle button.active{ background:var(--accent); color:#16100a; }
+      .group-title{ margin:18px 0 8px; font-size:.85rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
+      .group-title:first-child{ margin-top:6px; }
+      .group-title.wing-title{ color:var(--accent); font-size:.78rem; border-top:1px dashed var(--line); padding-top:10px; }
+      .machine{ border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px; margin-bottom:10px; background:#1a2027; box-shadow:inset 0 1px 0 rgba(255,255,255,.04); }
+      .machine-top{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+      .machine-icon{ font-size:1.45rem; }
+      .machine-name{ font-weight:700; font-size:1rem; }
+      .machine-plate{ font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.68rem; letter-spacing:.06em; background:var(--led-bg); color:#ffb066; border:1px solid var(--line); border-radius:3px; padding:2px 6px; white-space:nowrap; }
+      .owned-badge{ background:var(--gray-bg); border:1px solid var(--line); border-radius:3px; padding:2px 9px; font-weight:700; font-size:.88rem; font-family:ui-monospace,Menlo,Consolas,monospace; }
+      .machine-recipe{ color:var(--muted); font-size:.9rem; margin:6px 0 10px; }
+      .machine-actions{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+      .buy-btn{ background:var(--accent); border-color:var(--accent-dark); color:#16100a; font-weight:800; flex:1 1 150px; }
+      .buy-btn:disabled{ background:var(--accent); }
+      .craft-btn{ background:#17301f; border-color:#2f6b3f; color:var(--green-ink); font-weight:700; position:relative; }
+      .pill{ border-radius:3px; padding:4px 10px; font-size:.78rem; font-weight:800; letter-spacing:.05em; white-space:nowrap; border:1px solid var(--line); font-family:"Arial Narrow",Arial,sans-serif; }
+      .pill.running{ background:var(--green-bg); color:var(--green-ink); border-color:#2f6b3f; }
+      .pill.starved{
+        background-color:var(--red-bg); color:var(--red-ink); border-color:var(--red);
+        background-image:repeating-linear-gradient(45deg, var(--accent) 0 8px, #14171c 8px 16px);
+        background-size:100% 6px; background-repeat:no-repeat; background-position:top left; padding-top:8px;
+      }
+      .pill.none{ background:var(--gray-bg); color:var(--muted); }
+      .pill.paused{ background:#2c333c; color:#c3cad2; border-color:#55606c; }
+      /* ---------- Priority / Pause controls (assembly lines) ---------- */
+      .machine.is-priority{
+        border-color:var(--accent);
+        background-image:repeating-linear-gradient(45deg, var(--accent) 0 10px, #14171c 10px 20px);
+        background-size:100% 7px; background-repeat:no-repeat; background-position:top left;
+        background-color:#1d232b; padding-top:16px;
+      }
+      .machine.is-paused{ opacity:.85; }
+      .priority-tag{
+        display:none; color:#fff; border-radius:3px; text-shadow:0 1px 2px #000, 0 0 4px #000;
+        background:repeating-linear-gradient(45deg, var(--accent) 0 10px, #14171c 10px 20px);
+        border:1px solid #000; padding:3px 9px; font-size:.72rem; font-weight:800; letter-spacing:.06em; white-space:nowrap;
+      }
+      .priority-tag.show{ display:inline-block; }
+      .mode-control{ display:flex; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin:0 0 10px; touch-action:manipulation; }
+      .mode-control button{
+        flex:1; min-height:42px; height:42px; border:none; border-radius:0; background:var(--card2);
+        color:var(--muted); font-weight:700; font-size:.86rem; padding:6px 4px; letter-spacing:.04em;
+      }
+      .mode-control button + button{ border-left:1px solid var(--line); }
+      .mode-control button.active-paused{ background:#55606c; color:#fff; }
+      .mode-control button.active-normal{ background:#39424e; color:#fff; box-shadow:inset 0 0 0 1px #9aa3ad; }
+      .mode-control button.active-priority{ background:var(--accent); color:#16100a; }
+      .assembly-controls{ display:flex; align-items:center; gap:8px; margin:0 0 10px; flex-wrap:wrap; }
+      .assembly-controls .reset-modes-btn{ min-height:36px; padding:6px 12px; font-size:.86rem; font-weight:700; background:var(--card2); }
+      .assembly-controls .assembly-controls-hint{ color:var(--muted); font-size:.84rem; }
+      .order-warning{
+        background:var(--red-bg); border:1px solid var(--red); color:var(--red-ink); border-radius:var(--radius);
+        padding:8px 10px; font-size:.9rem; font-weight:700; margin:8px 0;
+      }
+      #orderBanner .ob-warning{ color:var(--red); font-weight:800; display:block; margin-top:2px; }
+
+      /* ---------- Orders / Contracts ---------- */
+      .order-empty{ color:var(--muted); }
+      .order-card{
+        border:1px solid var(--accent-dark); background:#232830; border-radius:var(--radius); padding:12px 14px;
+        background-image:repeating-linear-gradient(45deg, var(--accent) 0 10px, #14171c 10px 20px);
+        background-size:100% 6px; background-repeat:no-repeat; background-position:top left; padding-top:16px;
+      }
+      .order-card.active{ border-color:#2f6b3f; background:#1d2a21; background-image:none; padding-top:12px; }
+      .order-title{ font-weight:800; font-size:1.03rem; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+      .order-meta{ color:var(--muted); font-size:.92rem; margin:6px 0; }
+      .order-meta strong{ color:var(--ink); }
+      .client-line{ color:var(--accent); font-weight:800; letter-spacing:.05em; font-family:"Arial Narrow",Arial,sans-serif; text-transform:uppercase; }
+      .client-flavor{ color:#d8d3c8; font-style:italic; }
+      .progress-track{ background:#0d0f12; border:1px solid var(--line); border-radius:3px; height:14px; overflow:hidden; margin:8px 0; }
+      .progress-fill{ background:var(--green); height:100%; width:0%; transition:width .2s linear; }
+      .order-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+      .order-actions button{ flex:1 1 120px; font-weight:700; }
+      .btn-green{ background:#2f9e57; border-color:#2f6b3f; color:#fff; }
+      .btn-orange{ background:var(--accent); border-color:var(--accent-dark); color:#16100a; }
+      .btn-accent{ background:var(--accent); border-color:var(--accent-dark); color:#16100a; font-weight:800; }
+      .countdown{ font-variant-numeric:tabular-nums; font-weight:800; color:var(--accent); font-family:ui-monospace,Menlo,Consolas,monospace; }
+      .countdown.urgent{ color:var(--red); }
+
+      /* ---------- Upgrades / Buyout / misc ---------- */
+      .upgrade{ display:flex; gap:12px; align-items:center; border:1px solid var(--line); border-radius:var(--radius); padding:10px 12px; margin-bottom:10px; flex-wrap:wrap; background:#1a2027; }
+      .upgrade .u-icon{ font-size:1.45rem; }
+      .upgrade .u-info{ flex:1 1 150px; }
+      .upgrade .u-name{ font-weight:700; }
+      .upgrade .u-desc{ color:var(--muted); font-size:.88rem; }
+      .upgrade .u-level{ font-size:.85rem; font-weight:700; color:#ffb066; font-family:ui-monospace,Menlo,Consolas,monospace; }
+      .upgrade button{ font-weight:700; }
+      .upgrade.maxed{ opacity:.6; background:#171b20; }
+      .ipo-stats{ display:flex; flex-direction:column; gap:4px; margin-bottom:10px; font-size:.97rem; }
+      .ipo-stats strong{ font-variant-numeric:tabular-nums; font-family:ui-monospace,Menlo,Consolas,monospace; }
+      .btn-ipo{ width:100%; background:var(--accent); border-color:var(--accent-dark); color:#16100a; font-weight:800; font-size:1rem; letter-spacing:.03em; }
+      .ach-row{ display:flex; gap:10px; align-items:center; padding:7px 0; border-bottom:1px dashed var(--line); }
+      .ach-row:last-child{ border-bottom:none; }
+      .ach-row .a-icon{ font-size:1.2rem; width:28px; text-align:center; }
+      .ach-row .a-name{ font-weight:700; }
+      .ach-row .a-desc{ color:var(--muted); font-size:.86rem; }
+      .ach-row.locked{ opacity:.5; }
+      .ach-row .a-check{ margin-left:auto; font-size:1.05rem; }
+      .log-row{ padding:9px 0; border-bottom:1px dashed var(--line); }
+      .log-row:last-child{ border-bottom:none; }
+      .log-head{ font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.72rem; letter-spacing:.08em; color:#ffb066; }
+      .log-title{ font-weight:800; font-family:"Arial Narrow",Arial,sans-serif; text-transform:uppercase; letter-spacing:.06em; margin-left:8px; color:var(--ink); font-size:1rem; }
+      .log-body{ color:#d8d3c8; font-size:.92rem; margin-top:4px; }
+      .log-row.locked{ opacity:.5; }
+      .log-row.locked .log-body{ color:var(--muted); font-style:italic; }
+      .stat-row{ display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px dashed var(--line); font-size:.97rem; }
+      .stat-row:last-child{ border-bottom:none; }
+      .stat-row strong{ font-variant-numeric:tabular-nums; font-family:ui-monospace,Menlo,Consolas,monospace; }
+      details summary{ cursor:pointer; font-weight:700; min-height:36px; display:flex; align-items:center; touch-action:manipulation; }
+      .help-body{ font-size:.93rem; color:#d8d3c8; }
+      .help-body h4{ margin:14px 0 6px; font-family:"Arial Narrow",Arial,sans-serif; text-transform:uppercase; letter-spacing:.07em; color:#f2efe9; }
+      .help-body ul{ margin:6px 0; padding-left:20px; }
+      .help-body li{ margin:3px 0; }
+      .settings-grid{ display:flex; flex-direction:column; gap:8px; }
+      .settings-grid button{ font-weight:600; }
+      /* ---------- Auto-expedite setting ---------- */
+      .auto-prio-setting{ margin:0 0 14px; padding:0 0 12px; border-bottom:1px dashed var(--line); }
+      .settings-grid .auto-prio-setting{ margin:0; padding:0 0 4px; border-bottom:none; }
+      .auto-prio-toggle{
+        display:flex; align-items:center; gap:10px; width:100%; min-height:48px; height:auto;
+        text-align:left; font-weight:700; padding:8px 12px; background:var(--card2); touch-action:manipulation;
+      }
+      .auto-prio-toggle .toggle-track{ width:48px; height:28px; border-radius:4px; background:#39424e; position:relative; flex:0 0 48px; display:inline-block; border:1px solid var(--line); }
+      .auto-prio-toggle .toggle-thumb{ position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:3px; background:#9aa3ad; display:block; }
+      .auto-prio-toggle[aria-checked="true"] .toggle-track{ background:#2f9e57; }
+      .auto-prio-toggle[aria-checked="true"] .toggle-thumb{ left:23px; background:#fff; }
+      .auto-prio-toggle .toggle-label{ flex:1 1 auto; }
+      .auto-prio-toggle .toggle-state{ font-size:.88rem; font-weight:800; color:var(--muted); min-width:28px; text-align:right; }
+      .auto-prio-hint{ margin-top:6px; }
+      .auto-prio-note{ background:#2a2113; border:1px solid #7a5a1e; color:#fcd34d; border-radius:var(--radius); padding:7px 10px; font-weight:700; }
+      .btn-danger{ background:var(--card2); border-color:#8a3a3a; color:var(--red); font-weight:700; }
+      textarea{
+        width:100%; min-height:74px; border:1px solid var(--line); border-radius:var(--radius);
+        padding:10px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:16px; resize:vertical;
+        background:#12151a; color:var(--ink);
+        user-select:text; -webkit-user-select:text; -webkit-touch-callout:default;
+      }
+
+      /* ---------- Toasts & modal ---------- */
+      #toasts{ position:fixed; top:calc(env(safe-area-inset-top, 0px) + 8px); left:50%; transform:translateX(-50%); z-index:200; display:flex; flex-direction:column; gap:8px; width:calc(100% - 24px); max-width:440px; pointer-events:none; }
+      .toast{
+        background:#242c36; color:var(--ink); border:1px solid var(--line); border-left:4px solid var(--muted); border-radius:var(--radius); padding:11px 15px; font-weight:600;
+        box-shadow:0 8px 24px rgba(0,0,0,.5); animation:toastIn .28s ease; font-size:.95rem; width:100%; pointer-events:auto;
+        transition:opacity .3s ease, transform .3s ease;
+      }
+      .toast.good{ border-left-color:var(--green); } .toast.warn{ border-left-color:var(--accent); } .toast.bad{ border-left-color:var(--red); }
+      @keyframes toastIn{ from{ opacity:0; transform:translateY(-14px);} to{ opacity:1; transform:translateY(0);} }
+      #modalOverlay{ position:fixed; inset:0; background:rgba(5,6,8,.72); z-index:300; display:flex; align-items:center; justify-content:center; padding:16px; }
+      #modalOverlay[hidden]{ display:none; }
+      .modal{
+        background:linear-gradient(180deg, var(--card2), var(--card)); border:1px solid var(--line); border-top:4px solid var(--accent); border-radius:var(--radius); padding:22px; max-width:480px; width:100%;
+        box-shadow:0 20px 60px rgba(0,0,0,.6); max-height:88vh; overflow:auto; color:var(--ink);
+      }
+      .modal h2{ margin:0 0 10px; font-size:1.15rem; }
+      .modal ul{ padding-left:20px; margin:8px 0; }
+      .modal .modal-actions{ display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
+      .modal .modal-actions button{ flex:1 1 140px; font-weight:700; }
+
+      @media (max-width:1180px){
+        .layout{ grid-template-columns:300px minmax(0,1fr); }
+        #colShop{ grid-column:1 / -1; display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); align-items:start; }
+      }
+      @media (max-width:760px){
+        .layout{ grid-template-columns:minmax(0,1fr); padding:10px; }
+        #colShop{ display:flex; }
+        .topbar{ padding:8px 10px; }
+        .chip{ padding:6px 10px; font-size:.8rem; }
+      }
+      /* ---------- Mobile shell (new elements hidden on desktop) ---------- */
+      .mobile-title{ display:none; }
+      #resGrid{ display:none; }
+      #orderBanner{ display:none; }
+      #bottomNav{ display:none; }
+      .factory-subtabs{ display:none; }
+      .inv-craft-btn{ display:none !important; }
+      .nav-badge{
+        display:none; background:#b91c1c; color:#fff; font-size:.68rem; font-weight:800;
+        min-width:19px; height:19px; line-height:19px; border-radius:3px; padding:0 5px;
+        position:absolute; top:4px; right:calc(50% - 24px);
+      }
+      .nav-badge.show{ display:block; }
+
+      @media (max-width:768px){
+        html,body{ height:100%; overflow:hidden; }
+        body{ display:flex; flex-direction:column; height:100dvh; }
+        .topbar{ flex-wrap:nowrap; overflow:hidden; flex-shrink:0; padding:7px 8px; gap:5px; }
+        .mobile-title{ display:block; font-weight:800; font-size:.85rem; white-space:nowrap; color:#f2efe9; }
+        .chip{ padding:5px 8px; font-size:.78rem; flex-shrink:1; gap:4px; }
+        .chip strong{ font-size:.9rem; }
+        .chip.money strong{ font-size:1rem; }
+        #hMoney{ min-width:58px; }
+        #hRate{ min-width:52px; }
+        .chip-label{ display:none; }
+        .chip .bonus{ display:none; }
+        .lifetime-chip{ display:none !important; }
+        #resGrid{
+          display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px;
+          padding:8px 10px; background:#1a1f26; border-bottom:1px solid var(--line); flex-shrink:0;
+        }
+        .res-cell{
+          position:relative; height:64px; min-height:64px; width:100%;
+          padding:5px 3px 4px; border-radius:var(--radius); border:1px solid var(--line);
+          background:var(--card); color:var(--ink);
+          display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0;
+          font-variant-numeric:tabular-nums; touch-action:manipulation;
+          user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+        }
+        .res-cell .res-top{ display:flex; align-items:center; gap:3px; max-width:100%; font-size:.68rem; font-weight:700; line-height:1.15; white-space:nowrap; }
+        .res-cell .res-icon{ font-size:.85rem; line-height:1; }
+        .res-cell .res-name{ overflow:hidden; text-overflow:ellipsis; }
+        .res-cell .res-count{ font-size:.95rem; font-weight:800; line-height:1.2; white-space:nowrap; font-variant-numeric:tabular-nums; font-family:ui-monospace,Menlo,Consolas,monospace; }
+        .res-cell .res-rate{ font-size:.68rem; font-weight:700; line-height:1.15; white-space:nowrap; font-variant-numeric:tabular-nums; font-family:ui-monospace,Menlo,Consolas,monospace; }
+        .res-cell.squash{ animation:squash .18s ease; }
+        .layout{
+          flex:1 1 auto; overflow-y:auto; overflow-x:hidden; display:block;
+          padding:10px; margin:0; max-width:none; width:100%;
+          -webkit-overflow-scrolling:touch; grid-template-columns:none;
+        }
+        .col{ display:block; }
+        #colShop{ display:block; }
+        .card{ margin-bottom:12px; padding:14px; }
+        body[data-mobile-tab="stock"] .card[data-tabpanel]:not([data-tabpanel="stock"]),
+        body[data-mobile-tab="factory"] .card[data-tabpanel]:not([data-tabpanel="factory"]),
+        body[data-mobile-tab="orders"] .card[data-tabpanel]:not([data-tabpanel="orders"]),
+        body[data-mobile-tab="upgrades"] .card[data-tabpanel]:not([data-tabpanel="upgrades"]),
+        body[data-mobile-tab="more"] .card[data-tabpanel]:not([data-tabpanel="more"]){ display:none !important; }
+        .factory-subtabs{
+          display:flex; gap:6px; margin:0 0 12px; padding:6px 0; background:var(--card);
+          position:sticky; top:-11px; z-index:3; touch-action:manipulation;
+        }
+        .factory-subtabs button{ flex:1; min-height:42px; padding:6px 4px; font-weight:700; font-size:.88rem; }
+        .factory-subtabs button.active{ background:var(--accent); border-color:var(--accent-dark); color:#16100a; }
+        body[data-factory-group="gathering"] .machine[data-fgroup]:not([data-fgroup="gathering"]),
+        body[data-factory-group="gathering"] .group-title[data-fgroup]:not([data-fgroup="gathering"]),
+        body[data-factory-group="gathering"] .assembly-controls[data-fgroup]:not([data-fgroup="gathering"]),
+        body[data-factory-group="processing"] .machine[data-fgroup]:not([data-fgroup="processing"]),
+        body[data-factory-group="processing"] .group-title[data-fgroup]:not([data-fgroup="processing"]),
+        body[data-factory-group="processing"] .assembly-controls[data-fgroup]:not([data-fgroup="processing"]),
+        body[data-factory-group="assembly"] .machine[data-fgroup]:not([data-fgroup="assembly"]),
+        body[data-factory-group="assembly"] .group-title[data-fgroup]:not([data-fgroup="assembly"]),
+        body[data-factory-group="assembly"] .assembly-controls[data-fgroup]:not([data-fgroup="assembly"]){ display:none !important; }
+        .bulk-toggle button{ padding:6px 12px; }
+        .inv-craft-btn{ display:inline-flex !important; align-items:center; justify-content:center; flex:1; min-height:38px; padding:4px 8px; font-size:.9rem; background:#17301f; border-color:#2f6b3f; color:var(--green-ink); font-weight:700; }
+        .inv-craft-row{ display:flex; gap:6px; width:100%; }
+        .layout{ order:2; }
+        #orderBanner{ order:3; }
+        .tutorial{ order:4; position:static; flex-shrink:0; margin:0; padding:8px 10px; max-width:none; background:var(--bg); }
+        .tutorial-inner{ padding:10px 12px; }
+        #bottomNav{ order:5; }
+        #orderBanner{
+          flex-shrink:0; width:100%; text-align:left; border:none; border-radius:0;
+          background:#16281c; border-top:1px solid #2f6b3f; padding:8px 12px;
+          font-size:.88rem; font-weight:600; min-height:40px; color:var(--ink);
+        }
+        #orderBanner.show{ display:block; }
+        #orderBanner .ob-track{ background:#0d0f12; border-radius:3px; height:7px; overflow:hidden; margin-top:5px; }
+        #orderBanner .ob-fill{ background:var(--green); height:100%; }
+        #bottomNav{
+          display:flex; flex-shrink:0; background:#1a1f26; border-top:2px solid var(--line);
+          padding-bottom:env(safe-area-inset-bottom); z-index:70;
+          box-shadow:0 -2px 0 rgba(0,0,0,.5);
+          align-items:flex-end; overflow:visible; touch-action:manipulation;
+        }
+        #bottomNav button{
+          flex:1; position:relative; border:none; border-radius:0; background:transparent;
+          min-height:56px; padding:5px 2px 6px; display:flex; flex-direction:column;
+          align-items:center; justify-content:center; gap:1px; font-size:.7rem; font-weight:700; color:var(--muted);
+          letter-spacing:.05em; touch-action:manipulation;
+        }
+        #bottomNav button .nav-icon{ font-size:1.25rem; line-height:1.1; }
+        #bottomNav button.active{ color:var(--accent); background:#242c36; box-shadow:inset 0 3px 0 var(--accent); }
+        #bottomNav button.harvest-fab{
+          flex:0 0 76px; height:72px; min-height:72px; margin:-26px 1px 5px;
+          border-radius:8px; background:var(--accent); border:2px solid #0d0f12; color:#16100a;
+          font-size:.78rem; font-weight:800; box-shadow:0 6px 0 rgba(0,0,0,.5); z-index:2; padding:6px 2px;
+        }
+        #bottomNav button.harvest-fab .fab-icon{ font-size:1.5rem; line-height:1.1; }
+        #bottomNav button.harvest-fab:active{ transform:scale(.94); }
+        .gather-btn{ min-height:54px; }
+      }
+      /* ---------- Contract offer sets ---------- */
+      .offers-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:10px; }
+      .offer-card{ border:1px solid var(--line); background:#232830; border-radius:var(--radius); padding:12px 14px; }
+      .offer-card.easy{ border-color:#2f6b3f; }
+      .offer-card.medium{ border-color:var(--accent-dark); }
+      .offer-card.hard{
+        border-color:#8a3a3a;
+        background-image:repeating-linear-gradient(45deg, #8a3a3a 0 10px, #14171c 10px 20px);
+        background-size:100% 6px; background-repeat:no-repeat; background-position:top left; padding-top:16px;
+      }
+      .diff-tag{ display:inline-block; font-family:"Arial Narrow",Arial,sans-serif; font-weight:800; letter-spacing:.08em; font-size:.72rem; padding:2px 8px; border-radius:3px; border:1px solid var(--line); margin-bottom:6px; }
+      .diff-tag.easy{ background:var(--green-bg); color:var(--green-ink); border-color:#2f6b3f; }
+      .diff-tag.medium{ background:#2a2113; color:#fcd34d; border-color:#7a5a1e; }
+      .diff-tag.hard{ background:var(--red-bg); color:var(--red-ink); border-color:#8a3a3a; }
+      .contract-record{ color:var(--muted); font-size:.9rem; margin:0 0 10px; }
+      .contract-record strong{ color:var(--ink); }
+
+      /* ---------- Desktop menu layout (view nav applies >=769px only) ---------- */
+      #viewNav{ display:none; }
+      @media (min-width:769px){
+        #viewNav{ display:flex; flex-basis:100%; gap:6px; margin-top:8px; }
+        #viewNav button{
+          position:relative; flex:1; min-height:42px;
+          font-family:"Arial Narrow",Arial,sans-serif; font-weight:800; letter-spacing:.08em; font-size:.88rem; color:var(--muted);
+        }
+        #viewNav button.active{ background:var(--accent); border-color:var(--accent-dark); color:#16100a; }
+        .layout{ display:grid; grid-template-columns:repeat(auto-fit,minmax(350px,1fr)); max-width:1180px; align-items:start; }
+        body[data-view="floor"] .layout{ max-width:1340px; }
+        .col{ display:contents; }
+        #colShop{ display:contents; }
+        .tutorial{ max-width:1180px; }
+        body[data-view="stores"] .card[data-tabpanel]:not([data-tabpanel="stock"]):not([data-tabpanel="gather"]),
+        body[data-view="floor"] .card[data-tabpanel]:not([data-tabpanel="factory"]),
+        body[data-view="orders"] .card[data-tabpanel]:not([data-tabpanel="orders"]),
+        body[data-view="upgrades"] .card[data-tabpanel]:not([data-tabpanel="upgrades"]),
+        body[data-view="more"] .card[data-tabpanel]:not([data-tabpanel="more"]){ display:none !important; }
+        .card[data-tabpanel="factory"]{ grid-column:1 / -1; }
+        /* Persistent inventory strip — every resource, always on screen */
+        #resGrid{
+          display:grid; grid-template-columns:repeat(auto-fit,minmax(102px,1fr)); gap:6px;
+          max-width:1180px; margin:12px auto 0; padding:0 14px;
+        }
+        .res-cell{
+          position:relative; height:58px; min-height:58px; width:100%;
+          padding:5px 3px 4px; border-radius:var(--radius); border:1px solid var(--line);
+          background:var(--card); color:var(--ink);
+          display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0;
+          font-variant-numeric:tabular-nums; touch-action:manipulation;
+          user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+        }
+        .res-cell .res-top{ display:flex; align-items:center; gap:3px; max-width:100%; font-size:.68rem; font-weight:700; line-height:1.15; white-space:nowrap; }
+        .res-cell .res-icon{ font-size:.85rem; line-height:1; }
+        .res-cell .res-name{ overflow:hidden; text-overflow:ellipsis; }
+        .res-cell .res-count{ font-size:.95rem; font-weight:800; line-height:1.2; white-space:nowrap; font-variant-numeric:tabular-nums; font-family:ui-monospace,Menlo,Consolas,monospace; }
+        .res-cell .res-rate{ font-size:.68rem; font-weight:700; line-height:1.15; white-space:nowrap; font-variant-numeric:tabular-nums; font-family:ui-monospace,Menlo,Consolas,monospace; }
+        .res-cell.squash{ animation:squash .18s ease; }
+        /* Factory group subtabs on desktop, same filtering as mobile */
+        .factory-subtabs{ display:flex; gap:6px; margin:0 0 12px; }
+        .factory-subtabs button{ flex:1; min-height:42px; padding:6px 4px; font-weight:700; font-size:.88rem; }
+        .factory-subtabs button.active{ background:var(--accent); border-color:var(--accent-dark); color:#16100a; }
+        body[data-factory-group="gathering"] .machine[data-fgroup]:not([data-fgroup="gathering"]),
+        body[data-factory-group="gathering"] .group-title[data-fgroup]:not([data-fgroup="gathering"]),
+        body[data-factory-group="gathering"] .assembly-controls[data-fgroup]:not([data-fgroup="gathering"]),
+        body[data-factory-group="processing"] .machine[data-fgroup]:not([data-fgroup="processing"]),
+        body[data-factory-group="processing"] .group-title[data-fgroup]:not([data-fgroup="processing"]),
+        body[data-factory-group="processing"] .assembly-controls[data-fgroup]:not([data-fgroup="processing"]),
+        body[data-factory-group="assembly"] .machine[data-fgroup]:not([data-fgroup="assembly"]),
+        body[data-factory-group="assembly"] .group-title[data-fgroup]:not([data-fgroup="assembly"]),
+        body[data-factory-group="assembly"] .assembly-controls[data-fgroup]:not([data-fgroup="assembly"]){ display:none !important; }
+      }
+      @media (prefers-reduced-motion: reduce){
+        *{ animation:none !important; transition:none !important; }
+      }
+
+
+      /* ================================================================
+         OVERHAUL — Concept B flow board inside Concept A persistent frame
+         ================================================================ */
+      html, body{ height:100%; overflow:hidden; }
+      body{ display:flex; flex-direction:column; height:100dvh; }
+      #appShell{ display:flex; flex-direction:row; flex:1 1 auto; min-height:0; width:100%; }
+      /* ---------- Rail (Concept A) ---------- */
+      #rail{
+        width:86px; flex:0 0 86px; background:#0e1013; border-right:1px solid var(--line);
+        display:flex; flex-direction:column; align-items:stretch; padding:10px 0; gap:4px; z-index:60;
+      }
+      .rail-brand{ text-align:center; color:#ffb02e; font-weight:800; font-size:.72rem; letter-spacing:.08em; padding:6px 2px 12px; border-bottom:1px solid var(--line); margin-bottom:8px; line-height:1.5; font-family:"Arial Narrow",Arial,sans-serif; }
+      .rail-nav{ display:flex; flex-direction:column; gap:4px; }
+      .rail-nav button{
+        position:relative; border:none; border-radius:0; background:transparent; color:var(--muted);
+        display:flex; flex-direction:column; align-items:center; gap:3px; padding:11px 2px;
+        font-size:.66rem; font-weight:800; letter-spacing:.09em; min-height:58px;
+      }
+      .rail-nav button .rail-icon{ font-size:1.3rem; line-height:1.1; }
+      .rail-nav button.active{ background:#1d2026; color:var(--accent); box-shadow:inset 3px 0 0 var(--accent); }
+      .rail-nav .nav-badge{ top:6px; right:10px; }
+      .rail-doss{ margin-top:auto; text-align:center; color:var(--muted); font-size:.6rem; letter-spacing:.08em; padding:10px 2px 4px; border-top:1px solid var(--line); line-height:1.6; font-weight:700; }
+      .doss-dot{ display:block; width:10px; height:10px; border-radius:50%; background:var(--green); box-shadow:0 0 7px rgba(74,222,128,.7); margin:0 auto 4px; }
+      /* ---------- Main column & ticker ---------- */
+      #mainCol{ flex:1 1 auto; min-width:0; min-height:0; display:flex; flex-direction:column; }
+      #ticker{
+        flex:0 0 auto; display:flex; align-items:stretch; background:#0e1013; border-bottom:2px solid var(--line);
+        box-shadow:0 2px 0 rgba(0,0,0,.5); min-height:60px;
+      }
+      .tick-cell{ padding:7px 14px; border-right:1px solid #23262d; display:flex; flex-direction:column; justify-content:center; gap:1px; min-width:0; }
+      .tick-lab{ font-size:.6rem; letter-spacing:.13em; color:var(--muted); font-weight:800; font-family:"Arial Narrow",Arial,sans-serif; }
+      .tick-cell strong{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-variant-numeric:tabular-nums; white-space:nowrap; }
+      .tick-cash strong{ color:#ff8c2e; font-size:1.3rem; text-shadow:0 0 6px rgba(255,122,26,.45); line-height:1.15; }
+      .tick-cash{ background:var(--led-bg); box-shadow:inset 0 2px 8px rgba(0,0,0,.9); }
+      .tick-rate strong{ color:var(--green); font-size:1.05rem; }
+      .tick-buyout{ flex:1 1 auto; min-width:150px; }
+      .tick-buyout-line{ display:flex; align-items:baseline; gap:5px; font-family:ui-monospace,Menlo,Consolas,monospace; }
+      .tick-buyout-line strong{ font-size:1.05rem; color:var(--ink); }
+      .tick-sh{ color:var(--muted); font-size:.72rem; font-weight:700; }
+      #tickerBuyoutGain{ color:var(--green); font-size:.8rem; font-weight:700; }
+      .tick-bar{ display:block; height:7px; background:#23262d; margin-top:3px; max-width:340px; }
+      .tick-bar i{ display:block; height:100%; width:0%; background:var(--accent); transition:width .3s ease; }
+      .tick-sub{ font-size:.68rem; color:var(--muted); font-family:ui-monospace,Menlo,Consolas,monospace; white-space:nowrap; }
+      .tick-btn{ text-align:left; border-top:none; border-bottom:none; border-left:none; border-radius:0; background:transparent; cursor:pointer; }
+      .tick-bottleneck strong{ font-size:.86rem; color:var(--green); }
+      .tick-bottleneck.alert strong{ color:var(--red); }
+      .tick-contract{ border-right:none; }
+      .tick-contract strong{ font-size:.95rem; color:#ffb02e; }
+      /* ---------- Pinned inventory strip ---------- */
+      #mainCol #resGrid{
+        display:grid; grid-template-columns:repeat(auto-fit,minmax(102px,1fr)); gap:6px;
+        max-width:none; width:auto; margin:0; padding:8px 10px; flex:0 0 auto;
+        background:#1a1f26; border-bottom:1px solid var(--line);
+      }
+      #mainCol .tutorial{ order:0; position:static; flex:0 0 auto; margin:0; padding:8px 10px; max-width:none; background:var(--bg); }
+      /* ---------- View scroll area ---------- */
+      .view-scroll{ flex:1 1 auto; overflow-y:auto; overflow-x:hidden; min-height:0; padding:14px; -webkit-overflow-scrolling:touch; }
+      .view-stack{ max-width:1240px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
+      .view-stack .card{ margin:0; }
+      body[data-view="floor"] .card[data-tabpanel]:not([data-tabpanel="factory"]),
+      body[data-view="stores"] .card[data-tabpanel]:not([data-tabpanel="stock"]):not([data-tabpanel="gather"]),
+      body[data-view="orders"] .card[data-tabpanel]:not([data-tabpanel="orders"]),
+      body[data-view="upgrades"] .card[data-tabpanel]:not([data-tabpanel="upgrades"]),
+      body[data-view="more"] .card[data-tabpanel]:not([data-tabpanel="more"]){ display:none !important; }
+      /* ---------- Flow board (Concept B) ---------- */
+      .floor-card{ padding:14px; }
+      .floor-toolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:12px 0 6px; }
+      .floor-toolbar button{ min-height:40px; font-weight:800; font-size:.82rem; letter-spacing:.05em; }
+      #problemsToggle.active{ background:var(--red-bg); border-color:var(--red); color:var(--red-ink); }
+      .floor-hint{ color:var(--muted); font-size:.82rem; }
+      #flowBoard{ position:relative; padding:10px 4px 4px; }
+      #flowSvg{ position:absolute; left:0; top:0; pointer-events:none; z-index:0; overflow:visible; }
+      #flowLabels{ position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:2; }
+      .flow-label{
+        position:absolute; transform:translate(-50%,-50%); background:#10141a; border:1px solid #3f6ea6;
+        color:#a9d3f5; font-size:.62rem; font-weight:700; padding:1px 5px; white-space:nowrap;
+        font-family:ui-monospace,Menlo,Consolas,monospace; border-radius:3px;
+      }
+      .flow-label.hot{ border-color:var(--red); color:#ffb3ab; }
+      .flow-path{ fill:none; stroke:#3f6ea6; stroke-width:2; opacity:.45; }
+      .flow-path.flowing{ stroke:#6fb6f2; opacity:.9; stroke-dasharray:7 7; animation:flowDash 1.2s linear infinite; }
+      .flow-path.blocked{ stroke:var(--red); opacity:.85; stroke-dasharray:none; animation:none; }
+      .flow-path.stopped{ stroke:#39424e; opacity:.35; stroke-dasharray:none; animation:none; }
+      @keyframes flowDash{ to{ stroke-dashoffset:-28; } }
+      .flow-cols{ position:relative; z-index:1; display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px 92px; align-items:start; }
+      .flow-col{ display:flex; flex-direction:column; gap:10px; min-width:0; }
+      .flow-col-head{ font-size:.7rem; letter-spacing:.16em; color:#7fb2dd; font-weight:800; font-family:"Arial Narrow",Arial,sans-serif; }
+      .flow-wing{ font-size:.66rem; letter-spacing:.12em; color:var(--accent); font-weight:800; border-top:1px dashed var(--line); padding-top:8px; font-family:"Arial Narrow",Arial,sans-serif; }
+      .fnode{ background:#1d2026; border:1.5px solid #33373f; border-radius:var(--radius); padding:10px 12px; box-shadow:inset 0 1px 0 rgba(255,255,255,.04); }
+      .fnode .fn-head{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+      .fn-lamp{ width:10px; height:10px; border-radius:50%; background:#5b636e; flex:0 0 10px; }
+      .fnode.st-running .fn-lamp{ background:var(--green); box-shadow:0 0 7px rgba(74,222,128,.65); }
+      .fnode.st-starved{ border-color:var(--red); background:#221619; animation:nodePulse 1.6s infinite; }
+      .fnode.st-starved .fn-lamp{ background:var(--red); box-shadow:0 0 8px rgba(248,113,113,.8); }
+      .fnode.st-held .fn-lamp{ background:#9aa3ad; }
+      .fnode.st-locked{ opacity:.72; border-style:dashed; }
+      .fnode.is-priority{ border-color:var(--accent); }
+      .fnode.highlight{ box-shadow:0 0 0 3px var(--accent), 0 0 18px rgba(255,122,26,.5); }
+      @keyframes nodePulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(248,113,113,0);} 50%{ box-shadow:0 0 0 5px rgba(248,113,113,.25);} }
+      .fn-recipe{ color:var(--muted); font-size:.82rem; margin:5px 0 4px; }
+      .fn-rate{ font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.86rem; font-weight:700; color:#9fd8ae; font-variant-numeric:tabular-nums; }
+      .fnode.st-starved .fn-rate{ color:#ff8a7a; }
+      .fn-status{ margin:7px 0 9px; display:inline-block; }
+      .pill.locked{ background:var(--gray-bg); color:var(--muted); border-color:var(--line); }
+      .fnode .machine-actions{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+      .fnode .mode-control{ margin:0 0 9px; }
+      .fn-gather{ cursor:pointer; }
+      #flowBoard.problems-only .fnode:not(.has-problem){ opacity:.18; }
+      /* ---------- Phone frame ---------- */
+      @media (max-width:768px){
+        #rail{ display:none; }
+        #ticker{ flex-wrap:wrap; min-height:0; }
+        .tick-cell{ padding:5px 9px; }
+        .tick-cash strong{ font-size:1.08rem; }
+        .tick-rate strong{ font-size:.92rem; }
+        .tick-buyout{ flex:1 1 100%; order:4; border-top:1px solid #23262d; }
+        .tick-bar{ max-width:none; }
+        .tick-bottleneck{ flex:1 1 auto; order:5; border-top:1px solid #23262d; }
+        .tick-bottleneck strong{ font-size:.72rem; white-space:normal; }
+        .tick-contract{ margin-left:auto; }
+        .tick-contract strong{ font-size:.85rem; }
+        #mainCol #resGrid{ grid-template-columns:repeat(4,minmax(0,1fr)); padding:7px 8px; }
+        .view-scroll{ padding:10px; }
+        .flow-cols{ grid-template-columns:minmax(0,1fr); gap:30px; }
+        .flow-col{ gap:9px; }
+      }
+      @media (prefers-reduced-motion: reduce){
+        .flow-path.flowing{ animation:none !important; }
+        .fnode.st-starved{ animation:none !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="appShell">
+      <aside id="rail" aria-label="Plant views">
+        <div class="rail-brand">PLANT<br>No. 9</div>
+        <nav class="rail-nav">
+          <button type="button" data-view-btn="floor"><span class="rail-icon">🏭</span><span class="rail-lab">FLOOR</span><span class="nav-badge" id="deskFactoryBadge">0</span></button>
+          <button type="button" data-view-btn="stores"><span class="rail-icon">🎒</span><span class="rail-lab">STORES</span></button>
+          <button type="button" data-view-btn="orders"><span class="rail-icon">📋</span><span class="rail-lab">CONTRACTS</span><span class="nav-badge" id="deskOrdersBadge">!</span></button>
+          <button type="button" data-view-btn="upgrades"><span class="rail-icon">🔧</span><span class="rail-lab">REFIT</span></button>
+          <button type="button" data-view-btn="more"><span class="rail-icon">☰</span><span class="rail-lab">OFFICE</span></button>
+        </nav>
+        <div class="rail-doss"><span class="doss-dot"></span>DOSS<br>ON SHIFT</div>
+      </aside>
+      <div id="mainCol">
+        <header id="ticker">
+          <div class="tick-cell tick-cash" id="moneyChip"><span class="tick-lab">CASH</span><strong id="hMoney">$0</strong></div>
+          <div class="tick-cell tick-rate"><span class="tick-lab">NET REVENUE</span><strong id="hRate">$0/s</strong></div>
+          <div class="tick-cell tick-buyout"><span class="tick-lab">BUYOUT</span><span class="tick-buyout-line"><strong id="hShares">0</strong><span class="tick-sh">SH</span><span class="bonus" id="hShareBonus"></span><span id="tickerBuyoutGain"></span></span><span class="tick-bar"><i id="tickerBuyoutBar"></i></span><span class="tick-sub" id="tickerBuyoutNext"></span></div>
+          <button type="button" class="tick-cell tick-btn tick-bottleneck" id="tickerBottleneck"><span class="tick-lab">BOTTLENECK</span><strong id="tickerBottleneckText">✓ ALL LINES CLEAR</strong></button>
+          <button type="button" class="tick-cell tick-btn tick-contract" id="tickerContract"><span class="tick-lab">CONTRACT</span><strong id="tickerContractText">—</strong></button>
+        </header>
+
+        <div id="resGrid" aria-label="Stores and production rates"></div>
+
+        <div class="tutorial" id="tutorialBar" hidden>
+          <div class="tutorial-inner">
+            <span class="tutorial-from">DOSS · FOREMAN'S BRIEFING</span>
+            <p id="tutorialText"></p>
+            <button id="tutorialAction" type="button">Got it!</button>
+            <button id="tutorialDismiss" type="button">Dismiss</button>
+          </div>
+        </div>
+
+        <main class="view-scroll" id="viewScroll">
+          <div class="view-stack">
+            <div class="card floor-card" data-tabpanel="factory">
+              <div class="factory-head">
+                <h2>🏭 Production Flow — Plant No. 9</h2>
+                <div class="bulk-toggle" role="group" aria-label="Bulk buy amount">
+                  <button id="bulk1" type="button" class="active">Buy ×1</button>
+                  <button id="bulk10" type="button">Buy ×10</button>
+                </div>
+              </div>
+              <div class="floor-toolbar">
+                <button type="button" id="problemsToggle" aria-pressed="false">⚠ PROBLEMS ONLY</button>
+                <button type="button" id="resetModesBtn">↩️ RESET ALL TO NORMAL</button>
+                <span class="floor-hint">EXPEDITE lines get shared parts first · HELD lines use nothing · Tap a raw-material node to salvage it by hand</span>
+              </div>
+              <div id="flowBoard">
+                <svg id="flowSvg" aria-hidden="true"></svg>
+                <div id="flowLabels" aria-hidden="true"></div>
+                <div class="flow-cols" id="factoryGroups"></div>
+              </div>
+            </div>
+
+            <div class="card" data-tabpanel="gather">
+              <h2>✋ Manual Salvage — Raw Materials</h2>
+              <div class="gather-grid" id="gatherBtns"></div>
+              <p class="hint">Salvage by hand when a line is short. Raw stock sells for $1 a unit — the real money is in finished goods coming off the lines.</p>
+            </div>
+            <div class="card" data-tabpanel="stock">
+              <h2>🎒 Stores — Inventory</h2>
+              <div id="invList"></div>
+              <h3 class="sub">Finished products shipped (lifetime)</h3>
+              <div id="prodSoldList"></div>
+            </div>
+
+            <div class="card" data-tabpanel="orders">
+              <h2>📋 Contracts</h2>
+              <div class="auto-prio-setting">
+                <button type="button" class="auto-prio-toggle" id="autoPrioToggleOrders" role="switch" aria-checked="true" aria-label="Auto-expedite contract line"><span class="toggle-track"><span class="toggle-thumb"></span></span><span class="toggle-label">Auto-expedite contract line</span><span class="toggle-state">On</span></button>
+                <p class="hint auto-prio-hint">When you accept a contract, its production line is set to Expedite until the contract ends. Changing this mid-contract applies from the next contract.</p>
+              </div>
+              <div id="orderBody"></div>
+            </div>
+
+            <div class="card" data-tabpanel="upgrades">
+              <h2>🔧 Refit — Upgrades</h2>
+              <div id="upgradeList"></div>
+            </div>
+
+            <div class="card" data-tabpanel="more">
+              <h2>🏭 Buyout — Take the Plant</h2>
+              <div id="ipoBody"></div>
+            </div>
+            <div class="card" data-tabpanel="more">
+              <h2>📓 Plant Log</h2>
+              <div id="plantLogList"></div>
+            </div>
+            <div class="card" data-tabpanel="more">
+              <h2>🏆 Plant Record</h2>
+              <div id="achList"></div>
+            </div>
+            <div class="card" data-tabpanel="more">
+              <h2>📊 Plant Ledger</h2>
+              <div id="statsBody"></div>
+            </div>
+            <div class="card" data-tabpanel="more">
+              <h2>❓ Plant Manual</h2>
+              <details>
+                <summary>Show manual &amp; full recipe list</summary>
+                <div class="help-body" id="helpBody"></div>
+              </details>
+            </div>
+            <div class="card" data-tabpanel="more">
+              <h2>⚙️ Settings</h2>
+              <div class="settings-grid">
+                <div class="auto-prio-setting">
+                  <button type="button" class="auto-prio-toggle" id="autoPrioToggleSettings" role="switch" aria-checked="true" aria-label="Auto-expedite contract line"><span class="toggle-track"><span class="toggle-thumb"></span></span><span class="toggle-label">Auto-expedite contract line</span><span class="toggle-state">On</span></button>
+                  <p class="hint auto-prio-hint">When you accept a contract, its production line is set to Expedite until the contract ends. Changing this mid-contract applies from the next contract.</p>
+                </div>
+                <button id="replayTutorialBtn" type="button">📋 Replay Foreman's Briefing</button>
+                <button id="exportBtn" type="button">📤 Export Save</button>
+                <textarea id="saveText" placeholder="Your exported save appears here. To import, paste a save and press Import Save." aria-label="Save data"></textarea>
+                <button id="copySaveBtn" type="button">📋 Copy Save Text</button>
+                <button id="importBtn" type="button">📥 Import Save</button>
+                <button id="resetBtn" type="button" class="btn-danger">🗑️ Reset Save</button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <button id="orderBanner" type="button" aria-label="View active contract"></button>
+    <nav id="bottomNav" aria-label="Game sections">
+      <button type="button" data-tab-btn="stock" class="active"><span class="nav-icon">🎒</span><span>STORES</span></button>
+      <button type="button" data-tab-btn="factory"><span class="nav-icon">🏭</span><span>FLOOR</span><span class="nav-badge" id="factoryBadge">0</span></button>
+      <button type="button" id="harvestBtn" class="harvest-fab" aria-label="Salvage the raw material you hold least of"><span class="fab-icon">⛏️</span><span>SALVAGE</span></button>
+      <button type="button" data-tab-btn="orders"><span class="nav-icon">📋</span><span>CONTRACTS</span><span class="nav-badge" id="ordersBadge">!</span></button>
+      <button type="button" data-tab-btn="upgrades"><span class="nav-icon">🔧</span><span>REFIT</span></button>
+      <button type="button" data-tab-btn="more"><span class="nav-icon">☰</span><span>OFFICE</span></button>
+    </nav>
+
+    <div id="toasts" aria-live="polite"></div>
+    <div id="modalOverlay" hidden><div class="modal" id="modalBox" role="dialog" aria-modal="true"></div></div>
+
+    <script>
+    'use strict';
+    /* ================= CONFIG ================= */
+    const SAVE_KEY = 'chipworks_save_v1';
+    const GATE_EARNINGS = 1000;           // lifetime earnings that reveal Glass/Lithium
+    const COST_GROWTH = 1.15;
+
+    const RES = {
+      silicon: { name:'Silicon',       icon:'🪨', raw:true  },
+      copper:  { name:'Copper',        icon:'🟠', raw:true  },
+      plastic: { name:'Plastic',       icon:'🧴', raw:true  },
+      glass:   { name:'Glass',         icon:'🪟', raw:true,  gated:true },
+      lithium: { name:'Lithium',       icon:'⚡', raw:true,  gated:true },
+      wire:    { name:'Copper Wire',   icon:'🧵' },
+      chip:    { name:'Microchip',     icon:'🔲' },
+      casing:  { name:'Casing',        icon:'📦' },
+      board:   { name:'Circuit Board', icon:'🟩' },
+      screen:  { name:'Screen',        icon:'🖥️', gated:true },
+      battery: { name:'Battery',       icon:'🔋', gated:true },
+    };
+    const RES_ORDER = ['silicon','copper','plastic','glass','lithium','wire','chip','casing','board','screen','battery'];
+    const RAW_ORDER = ['silicon','copper','plastic','glass','lithium'];
+    const RES_SHORT = { silicon:'Silicon', copper:'Copper', plastic:'Plastic', glass:'Glass', lithium:'Lithium', wire:'Wire', chip:'Chip', casing:'Casing', board:'Board', screen:'Screen', battery:'Battery' };
+
+    const PRODUCTS = {
+      lamp:       { name:'LED Lamp',        icon:'💡', price:18,   inputs:{ wire:1, casing:1 } },
+      calculator: { name:'Calculator',      icon:'🧮', price:50,   inputs:{ board:1, casing:1 } },
+      charger:    { name:'USB Charger',     icon:'🔌', price:90,   inputs:{ board:1, wire:1, casing:1 } },
+      speaker:    { name:'Bluetooth Speaker', icon:'🔊', price:170, inputs:{ board:1, wire:2, casing:1 } },
+      phone:      { name:'Smartphone',      icon:'📱', price:500,  inputs:{ board:1, screen:1, battery:1, casing:1 }, gated:true },
+      tablet:     { name:'Tablet',          icon:'📲', price:900,  inputs:{ board:1, screen:2, battery:1, casing:1 }, gated:true },
+      drone:      { name:'Drone',           icon:'🛸', price:2000, inputs:{ board:2, screen:1, battery:2, casing:2 }, gated:true },
+      console:    { name:'Gaming Console',  icon:'🎮', price:3000, inputs:{ board:2, screen:1, battery:1, casing:2 }, gated:true },
+    };
+    const PRODUCT_ORDER = ['lamp','calculator','charger','speaker','phone','tablet','drone','console'];
+
+    /* Machines are processed in array order each tick:
+       gatherers -> processors -> Board Assembler -> assembly lines. */
+    const MACHINES = [
+      { id:'siliconHarvester', kind:'gather', group:'Gathering', name:'Silicon Harvester', icon:'⛏️', output:'silicon', rate:0.5,  cost:30 },
+      { id:'copperHarvester',  kind:'gather', group:'Gathering', name:'Copper Harvester',  icon:'⛏️', output:'copper',  rate:0.5,  cost:30 },
+      { id:'plasticExtruder',  kind:'gather', group:'Gathering', name:'Plastic Extruder',  icon:'🏭', output:'plastic', rate:0.5,  cost:30 },
+      { id:'glassHarvester',   kind:'gather', group:'Gathering', name:'Glass Harvester',   icon:'⛏️', output:'glass',   rate:0.5,  cost:325, gated:true },
+      { id:'lithiumExtractor', kind:'gather', group:'Gathering', name:'Lithium Extractor', icon:'🔋', output:'lithium', rate:0.5,  cost:500, gated:true },
+      { id:'wireDrawer',    kind:'process', group:'Processing', name:'Wire Drawer',     icon:'🧵', output:'wire',    inputs:{ copper:1 },          rate:0.5,  cost:40,  craft:true },
+      { id:'chipFab',       kind:'process', group:'Processing', name:'Chip Fabricator', icon:'🔲', output:'chip',    inputs:{ silicon:2 },         rate:0.3,  cost:75,  craft:true },
+      { id:'casingMolder',  kind:'process', group:'Processing', name:'Casing Molder',   icon:'📦', output:'casing',  inputs:{ plastic:2 },         rate:0.4,  cost:50,  craft:true },
+      { id:'screenPress',   kind:'process', group:'Processing', name:'Screen Press',    icon:'🖥️', output:'screen',  inputs:{ glass:2 },           rate:0.25, cost:425, craft:true, gated:true },
+      { id:'batteryLine',   kind:'process', group:'Processing', name:'Battery Line',    icon:'🔋', output:'battery', inputs:{ lithium:2 },         rate:0.25, cost:550, craft:true, gated:true },
+      { id:'boardAssembler',kind:'process', group:'Processing', name:'Board Assembler', icon:'🟩', output:'board',   inputs:{ chip:1, wire:1 },    rate:0.3, cost:160, craft:true },
+      { id:'lampLine',       kind:'assemble', group:'Assembly', product:'lamp',       name:'Lamp Line',       icon:'💡', rate:0.2,  cost:120 },
+      { id:'calcLine',       kind:'assemble', group:'Assembly', product:'calculator', name:'Calculator Line', icon:'🧮', rate:0.15, cost:300 },
+      { id:'chargerLine',    kind:'assemble', group:'Assembly', product:'charger',    name:'Charger Line',    icon:'🔌', rate:0.15, cost:600 },
+      { id:'speakerLine',    kind:'assemble', group:'Assembly', product:'speaker',    name:'Speaker Line',    icon:'🔊', rate:0.12, cost:1200 },
+      { id:'phoneLine',      kind:'assemble', group:'Assembly', product:'phone',      name:'Phone Line',      icon:'📱', rate:0.1,  cost:3000, gated:true },
+      { id:'tabletLine',     kind:'assemble', group:'Assembly', product:'tablet',     name:'Tablet Line',     icon:'📲', rate:0.08, cost:5000, gated:true },
+      { id:'droneLine',      kind:'assemble', group:'Assembly', product:'drone',      name:'Drone Line',      icon:'🛸', rate:0.06, cost:9000, gated:true },
+      { id:'consoleLine',    kind:'assemble', group:'Assembly', product:'console',    name:'Console Line',    icon:'🎮', rate:0.05, cost:15000, gated:true },
+    ];
+    const MACHINE_BY_ID = {}; MACHINES.forEach(m => MACHINE_BY_ID[m.id] = m);
+    const PLATES = {
+      siliconHarvester:'MIN-01', copperHarvester:'MIN-02', plasticExtruder:'EXT-01',
+      glassHarvester:'FRN-01', lithiumExtractor:'MIN-03',
+      wireDrawer:'WRM-01', chipFab:'FAB-01', casingMolder:'MLD-01',
+      screenPress:'PRS-01', batteryLine:'CEL-01', boardAssembler:'SMT-01',
+      lampLine:'ASM-01', calcLine:'ASM-02', chargerLine:'ASM-03', speakerLine:'ASM-04',
+      phoneLine:'ASM-05', tabletLine:'ASM-06', droneLine:'ASM-07', consoleLine:'ASM-08',
+    };
+    const CLIENTS = [
+      { name:'Meridian Unified School District', line:'Budget money. Counted twice, spent once — get it right.' },
+      { name:'Halcyon Defense Systems', line:"They don't pay late. They don't accept late, either." },
+      { name:'BrightMart Retail Group', line:'Shelf space is already booked. The truck had better be full.' },
+      { name:'St. Aurelia Medical Center', line:'Their gear keeps people alive. No pressure.' },
+      { name:'Northbeam Logistics', line:'Every scanner on their dock came off a line like yours.' },
+      { name:'Cascade Arcades', line:'Kids with pockets full of quarters are counting on you.' },
+      { name:'Verano Hotels Group', line:'Five hundred rooms, and every guest wants a charged phone.' },
+      { name:'County Transit Authority', line:'Fare boxes, depot radios, driver tablets — they need the lot.' },
+    ];
+    function clientFlavor(name){
+      const c = CLIENTS.find(x => x.name === name);
+      return c ? c.line : '';
+    }
+    const GROUPS = ['Gathering','Processing','Assembly'];
+
+    const UPGRADES = [
+      { id:'click',       name:'Reinforced Click',    icon:'👆', desc:'Click power ×2 per level',                 costs:[100, 400, 1600, 6400, 20000] },
+      { id:'gathererEff', name:'Gatherer Efficiency', icon:'⚙️', desc:'+50% gatherer output per level',           costs:[500, 2500, 12500] },
+      { id:'machineSpeed',name:'Machine Speed',       icon:'🚀', desc:'+25% machine production rate per level',   costs:[750, 3400, 15000] },
+      { id:'smt',         name:'SMT Line',            icon:'🟩', desc:'+50% Board Assembler speed per level',       costs:[2500, 12500] },
+      { id:'marketing',   name:'Marketing',           icon:'📣', desc:'+20% sell prices per level',                 costs:[1000, 5000] },
+    ];
+
+    function totalMachinesOf(s){ return MACHINES.reduce((a,m)=> a + (s.machines[m.id]||0), 0); }
+    function totalProductsSoldOf(s){ return PRODUCT_ORDER.reduce((a,p)=> a + (s.soldCount[p]||0), 0); }
+
+    const ACHIEVEMENTS = [
+      { id:'firstClick',     icon:'🖱️', name:'First Click',     desc:'Gather a raw material by clicking',        test:s => s.stats.clicks >= 1 },
+      { id:'firstSale',      icon:'💵', name:'First Sale',      desc:'Sell anything',                            test:s => s.stats.itemsSold >= 1 },
+      { id:'firstChip',      icon:'🔲', name:'First Chip',      desc:'Produce 1 Microchip',                      test:s => (s.produced.chip||0) >= 1 },
+      { id:'firstProduct',   icon:'💡', name:'First Product',   desc:'Sell 1 finished product',                  test:s => totalProductsSoldOf(s) >= 1 },
+      { id:'assemblyOnline', icon:'🏭', name:'Assembly Online', desc:'Own 5 machines total',                     test:s => totalMachinesOf(s) >= 5 },
+      { id:'smallFactory',   icon:'🏗️', name:'Small Factory',   desc:'Own 25 machines total',                    test:s => totalMachinesOf(s) >= 25 },
+      { id:'massProduction', icon:'🌆', name:'Mass Production', desc:'Own 100 machines total',                   test:s => totalMachinesOf(s) >= 100 },
+      { id:'fourFigures',    icon:'💰', name:'Four Figures',    desc:'Reach $1,000 lifetime earnings',           test:s => s.lifetimeEarnings >= 1000 },
+      { id:'sixFigures',     icon:'🤑', name:'Six Figures',     desc:'Reach $100,000 lifetime earnings',         test:s => s.lifetimeEarnings >= 100000 },
+      { id:'orderUp',        icon:'📦', name:'Order Up',        desc:'Complete 1 bonus order',                   test:s => s.stats.ordersCompleted >= 1 },
+      { id:'reliable',       icon:'🤝', name:'Reliable Supplier', desc:'Complete 10 bonus orders',               test:s => s.stats.ordersCompleted >= 10 },
+      { id:'highTech',       icon:'📱', name:'High Tech',       desc:'Sell 1 Smartphone',                        test:s => (s.soldCount.phone||0) >= 1 },
+    ];
+
+    const PLANT_LOG = [
+      { id:'log001', num:'001', title:'The Keys', cond:'Take over Plant No. 9', test:s => true,
+        body:"Corporate handed me the keys and a deadline: ship product or the plant gets sold for scrap. Two years dark, and the dust in here has seniority. Well — dust doesn't run a line. We do." },
+      { id:'log002', num:'002', title:'First Shipment', cond:'Sell your first finished product', test:s => totalProductsSoldOf(s) >= 1,
+        body:"First box out the door today. Wasn't much, but a truck left this plant loaded for the first time in two years. I chalked the date on the wall by the dock, same as the old crew used to." },
+      { id:'log003', num:'003', title:'Wing B Reopened', cond:'Ship $1,000 in contract value', test:s => s.lifetimeEarnings >= 1000,
+        body:"Threw the breakers for Wing B this morning. Half the fluorescents still work, which is half more than corporate expected. Glass and lithium lines are live — mind the dust, it bites." },
+      { id:'log004', num:'004', title:'A Name on the Board', cond:'Complete your first contract', test:s => s.stats.ordersCompleted >= 1,
+        body:"First contract signed, sealed, and shipped on time. I wrote the client's name on the board in the office. That board was empty for two years. It isn't anymore." },
+      { id:'log005', num:'005', title:'The Night Shift Returns', cond:'Ship $10,000 in contract value', test:s => s.lifetimeEarnings >= 10000,
+        body:"Put out the word and three of the old night crew showed up with their own boots and thermoses. Didn't ask about pay first. Asked which line was theirs. That's the kind of people this plant runs on." },
+      { id:'log006', num:'006', title:'High Work', cond:'Sell your first Smartphone', test:s => (s.soldCount.phone||0) >= 1,
+        body:"First smartphone off the line today, screen lit, battery true. Two years ago this plant couldn't have built one if you spotted us the parts. Keep the boards coming and we'll build anything." },
+      { id:'log007', num:'007', title:'Corporate Stops Calling', cond:'Ship $100,000 in contract value', test:s => s.lifetimeEarnings >= 100000,
+        body:"Funny thing — the scrap deadline letters stopped coming. Now corporate sends people in clean shoes who say 'synergy' and take notes. I give them the tour and keep them off my floor." },
+      { id:'log008', num:'008', title:'Your Name on the Deed', cond:'Complete your first buyout', test:s => s.totalIPOs >= 1,
+        body:"Signed the buyout papers at the same desk they used to hand out layoff notices. Plant No. 9 answers to the people who run it now. I put the kettle on. We've got work." },
+      { id:'log009', num:'009', title:'Plant No. 9, Running', cond:'Ship $1,000,000 in contract value', test:s => s.lifetimeEarnings >= 1000000,
+        body:"A million in shipped work. Every line staffed, Wing B lit, trucks on a schedule. They were going to sell this place for scrap. Let them come look at it now — I'll hold the door." },
+    ];
+    function checkPlantLog(silent){
+      if (!state.plantLog || typeof state.plantLog !== 'object') state.plantLog = {};
+      PLANT_LOG.forEach(e => {
+        if (!state.plantLog[e.id] && e.test(state)) {
+          state.plantLog[e.id] = true;
+          if (!silent) toast('📓 Plant Log updated — ' + e.title, 'good');
+        }
+      });
+    }
+
+    const TUTORIAL_STEPS = [
+      'Step 1 of 4 — Name\'s Doss. I kept this plant\'s lights on for two years, so listen up. Hit the big SALVAGE button — it pulls whichever raw material you\'re shortest on. Or tap a resource up top to pull that one direct. (Desktop crew: use the Salvage buttons.)',
+      'Step 2 of 4 — Raw stock sells for a dollar a unit if you\'re desperate. Better: press Craft 1 on a machine card and make a component by hand. That\'s where the money starts.',
+      'Step 3 of 4 — Buy your first machine. Hands are fine for day one. Machines are how this plant ships on day thirty.',
+      'Step 4 of 4 — Finished goods sell themselves off the dock. A line shows LINE DOWN, it\'s starved for an input — that\'s your bottleneck. Feed the stage before it. Now get to work.',
+    ];
+
+    /* ================= STATE ================= */
+    function defaultLineModes(){
+      const lm = {};
+      MACHINES.forEach(m => { if (m.kind === 'assemble') lm[m.id] = 'normal'; });
+      return lm;
+    }
+    function defaultState(){
+      const inv = {}, machines = {}, produced = {}, soldCount = {};
+      RES_ORDER.forEach(r => inv[r] = 0);
+      MACHINES.forEach(m => machines[m.id] = 0);
+      RES_ORDER.forEach(r => produced[r] = 0);
+      PRODUCT_ORDER.forEach(p => { produced[p] = 0; soldCount[p] = 0; });
+      return {
+        version: 1,
+        money: 0,
+        lifetimeEarnings: 0,
+        runEarnings: 0,
+        shares: 0,
+        totalIPOs: 0,
+        lineModes: defaultLineModes(),
+        autoPrioritizeOrders: true,
+        inv, machines, produced, soldCount,
+        upgrades: { click:0, gathererEff:0, machineSpeed:0, marketing:0, smt:0 },
+        achievements: {},
+        stats: { clicks:0, itemsSold:0, ordersCompleted:0 },
+        unlocked2nd: false,
+        storyIntroSeen: false,
+        plantLog: {},
+        order: null,
+        offers: [],
+        contractStats: { done:0, missed:0, streak:0 },
+        nextOfferAt: 0,
+        tutorial: { step:0, done:false },
+        lastSeen: Date.now(),
+        snapshot: { moneyRate:0, gatherRates:{} },
+      };
+    }
+    function migrate(raw){
+      const s = defaultState();
+      if (!raw || typeof raw !== 'object') return s;
+      ['money','lifetimeEarnings','runEarnings','shares','totalIPOs','unlocked2nd','nextOfferAt','lastSeen'].forEach(k => {
+        if (typeof raw[k] === 'number' || typeof raw[k] === 'boolean') s[k] = raw[k];
+      });
+      if (typeof raw.autoPrioritizeOrders === 'boolean') s.autoPrioritizeOrders = raw.autoPrioritizeOrders;
+      if (typeof raw.storyIntroSeen === 'boolean') s.storyIntroSeen = raw.storyIntroSeen;
+      if (raw.plantLog && typeof raw.plantLog === 'object') {
+        Object.keys(raw.plantLog).forEach(k => { if (raw.plantLog[k]) s.plantLog[k] = true; });
+      }
+      if (raw.inv) RES_ORDER.forEach(r => { if (typeof raw.inv[r] === 'number') s.inv[r] = raw.inv[r]; });
+      if (raw.lineModes && typeof raw.lineModes === 'object') {
+        MACHINES.forEach(m => {
+          if (m.kind === 'assemble' && ['paused','normal','priority'].includes(raw.lineModes[m.id])) s.lineModes[m.id] = raw.lineModes[m.id];
+        });
+      }
+      if (raw.machines) MACHINES.forEach(m => { if (typeof raw.machines[m.id] === 'number') s.machines[m.id] = raw.machines[m.id]; });
+      if (raw.upgrades) Object.keys(s.upgrades).forEach(k => { if (typeof raw.upgrades[k] === 'number') s.upgrades[k] = raw.upgrades[k]; });
+      if (raw.produced) Object.keys(s.produced).forEach(k => { if (typeof raw.produced[k] === 'number') s.produced[k] = raw.produced[k]; });
+      if (raw.soldCount) PRODUCT_ORDER.forEach(p => { if (typeof raw.soldCount[p] === 'number') s.soldCount[p] = raw.soldCount[p]; });
+      if (raw.stats) Object.keys(s.stats).forEach(k => { if (typeof raw.stats[k] === 'number') s.stats[k] = raw.stats[k]; });
+      if (raw.achievements) s.achievements = raw.achievements;
+      if (raw.order && typeof raw.order === 'object' && PRODUCTS[raw.order.product]) s.order = raw.order;
+      // Legacy saves held a single 'offered' contract: it becomes a Medium offer in the new 3-offer set.
+      if (s.order && s.order.status === 'offered') {
+        s.offers = [{ tier:'medium', product:s.order.product, qty:s.order.qty, reward:s.order.reward, mult:2.5, client:s.order.client || '' }];
+        s.order = null;
+      }
+      if (Array.isArray(raw.offers)) {
+        s.offers = raw.offers
+          .filter(o => o && typeof o === 'object' && PRODUCTS[o.product] && typeof o.qty === 'number' && typeof o.reward === 'number')
+          .map(o => ({ tier: ['easy','medium','hard'].includes(o.tier) ? o.tier : 'medium', product:o.product, qty:o.qty, reward:o.reward, mult: typeof o.mult === 'number' ? o.mult : 2.5, client: typeof o.client === 'string' ? o.client : '' }));
+      }
+      if (raw.contractStats && typeof raw.contractStats === 'object') {
+        ['done','missed','streak'].forEach(k => { if (typeof raw.contractStats[k] === 'number') s.contractStats[k] = raw.contractStats[k]; });
+      } else {
+        s.contractStats.done = s.stats.ordersCompleted || 0;
+      }
+      if (raw.tutorial && typeof raw.tutorial === 'object') {
+        s.tutorial = { step: Math.min(3, Math.max(0, raw.tutorial.step|0)), done: !!raw.tutorial.done };
+      }
+      if (raw.snapshot && typeof raw.snapshot === 'object') {
+        s.snapshot = { moneyRate: raw.snapshot.moneyRate||0, gatherRates: raw.snapshot.gatherRates||{} };
+      }
+      s.version = 1;
+      return s;
+    }
+
+    let state = defaultState();
+    let bulk = 1;
+    let lastCalc = null;   // rates/status from the most recent tick
+    let gridSkips = 2;
+    let flowSkips = 2;      // grid text updates run every 3rd render (~300ms at the 100ms tick)
+    let gridDirty = true;   // player actions force an immediate grid text update on their render
+    let orderExpiredAway = false;
+    let pendingWelcome = null;
+    function showIntro(){
+      openModal(
+        '<h2>📓 PLANT LOG — ENTRY 001</h2>' +
+        '<p><strong>The Keys</strong></p>' +
+        '<p>ChipWorks Plant No. 9 has been shuttered for two years. Corporate has run out of patience: ship contract value again, or the plant is sold for scrap.</p>' +
+        '<p>You are the new plant manager. The lines are cold, the stores are empty, and the order board is bare.</p>' +
+        '<p>One man never left. Doss, the old foreman, kept the lights on and the roof patched, waiting for somebody to give this place a second chance.</p>' +
+        '<p><em>“She is not dead. She is waiting. There is a difference.” — Doss</em></p>' +
+        '<div class="modal-actions"><button type="button" class="btn-accent" onclick="dismissIntro()">Open the plant</button></div>'
+      );
+    }
+    function dismissIntro(){
+      state.storyIntroSeen = true;
+      save();
+      closeModal();
+      if (pendingWelcome) { const w = pendingWelcome; pendingWelcome = null; showWelcomeBack(w); }
+    }
+
+    function save(){
+      state.lastSeen = Date.now();
+      if (lastCalc) {
+        state.snapshot.moneyRate = lastCalc.moneyRate;
+        const gr = {};
+        RAW_ORDER.forEach(r => gr[r] = 0);
+        MACHINES.forEach(m => { if (m.kind === 'gather') gr[m.output] += lastCalc.rates[m.id] || 0; });
+        state.snapshot.gatherRates = gr;
+      }
+      try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch(e) { /* storage unavailable */ }
+    }
+    function load(){
+      try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return false;
+        state = migrate(JSON.parse(raw));
+        return true;
+      } catch(e) { return false; }
+    }
+
+    /* ================= FORMATTERS ================= */
+    function fmt(n){
+      if (!isFinite(n)) return '∞';
+      const neg = n < 0; n = Math.abs(n);
+      let s;
+      if (n < 10000) s = Math.floor(n).toLocaleString('en-US');
+      else {
+        const units = ['K','M','B','T','Qa','Qi','Sx','Sp'];
+        let v = n, u = -1;
+        while (v >= 1000 && u < units.length - 1) { v /= 1000; u++; }
+        s = String(parseFloat(v.toPrecision(3))) + units[u];
+      }
+      return (neg ? '-' : '') + s;
+    }
+    function money(n){ return '$' + fmt(n); }
+    function priceFmt(n){ return n < 100 ? '$' + n.toFixed(2) : '$' + fmt(n); }
+    function rateFmt(r){
+      const a = Math.abs(r);
+      const v = a >= 100 ? r.toFixed(0) : a >= 1 ? r.toFixed(1) : a > 0 ? r.toFixed(2) : '0.0';
+      return (r > 0 ? '+' : '') + v + '/s';
+    }
+    function durationFmt(sec){
+      sec = Math.floor(sec);
+      const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
+      if (h > 0) return h + 'h ' + m + 'm';
+      if (m > 0) return m + 'm ' + s + 's';
+      return s + 's';
+    }
+    function recipeText(inputs, outputId){
+      const parts = Object.keys(inputs).map(r => inputs[r] + '× ' + RES[r].icon + ' ' + RES[r].name);
+      const out = RES[outputId] ? RES[outputId].icon + ' ' + RES[outputId].name
+                                : PRODUCTS[outputId].icon + ' ' + PRODUCTS[outputId].name;
+      return parts.join(' + ') + ' → ' + out;
+    }
+    /* ================= MULTIPLIERS (central) ================= */
+    function mults(){
+      const shareBonus = 1 + 0.05 * state.shares;
+      return {
+        click: Math.pow(2, state.upgrades.click),
+        gather: Math.pow(1.5, state.upgrades.gathererEff) * shareBonus,
+        speed: Math.pow(1.25, state.upgrades.machineSpeed) * shareBonus,
+        price: Math.pow(1.2, state.upgrades.marketing) * shareBonus,
+        board: Math.pow(1.5, state.upgrades.smt || 0),
+      };
+    }
+    function machineInputs(m){ return m.kind === 'assemble' ? PRODUCTS[m.product].inputs : m.inputs; }
+    function machineOutput(m){ return m.kind === 'assemble' ? m.product : m.output; }
+    function lineMode(m){
+      if (!m || m.kind !== 'assemble') return 'normal';
+      const v = state.lineModes && state.lineModes[m.id];
+      return (v === 'paused' || v === 'priority') ? v : 'normal';
+    }
+    function lineModeByProduct(productId){
+      const m = MACHINES.find(x => x.kind === 'assemble' && x.product === productId);
+      return m ? lineMode(m) : 'normal';
+    }
+    function isAutoPrioritizeOn(){ return state.autoPrioritizeOrders !== false; }
+    function renderAutoPrioToggles(){
+      const on = isAutoPrioritizeOn();
+      document.querySelectorAll('.auto-prio-toggle').forEach(b => {
+        b.setAttribute('aria-checked', on ? 'true' : 'false');
+        const st = b.querySelector('.toggle-state');
+        if (st) st.textContent = on ? 'On' : 'Off';
+      });
+    }
+    function setAutoPrioritize(on){
+      state.autoPrioritizeOrders = !!on;
+      renderAutoPrioToggles();
+      save();
+    }
+    function orderLineMachine(productId){
+      return MACHINES.find(x => x.kind === 'assemble' && x.product === productId) || null;
+    }
+    function clearAutoPriorityFlag(order){
+      if (!order) return;
+      order.autoPriorityApplied = false;
+      delete order.prevMode;
+    }
+    function restoreAutoPriority(order){
+      if (!order || !order.autoPriorityApplied) return;
+      const machine = orderLineMachine(order.product);
+      const prev = order.prevMode;
+      clearAutoPriorityFlag(order);
+      if (machine && ['paused','normal','priority'].includes(prev)) {
+        if (!state.lineModes) state.lineModes = defaultLineModes();
+        state.lineModes[machine.id] = prev;
+        gridDirty = true;
+      }
+    }
+    function setLineMode(machineId, mode){
+      if (!['paused','normal','priority'].includes(mode)) return;
+      if (!state.lineModes) state.lineModes = defaultLineModes();
+      // Manual change to the auto-prioritized order line clears the auto flag:
+      // the player's choice is respected and nothing is restored when the order ends.
+      if (state.order && state.order.status === 'active' && state.order.autoPriorityApplied) {
+        const om = orderLineMachine(state.order.product);
+        if (om && om.id === machineId) clearAutoPriorityFlag(state.order);
+      }
+      state.lineModes[machineId] = mode;
+      gridDirty = true;
+      save(); render();
+    }
+    function resetAllLineModes(){
+      // Reset-all counts as a manual change for an auto-prioritized order line.
+      if (state.order && state.order.status === 'active' && state.order.autoPriorityApplied) {
+        clearAutoPriorityFlag(state.order);
+      }
+      state.lineModes = defaultLineModes();
+      gridDirty = true;
+      toast('↩️ All production lines reset to NORMAL.', '');
+      save(); render();
+    }
+    function machineMaxRate(m){
+      const owned = state.machines[m.id] || 0;
+      if (!owned) return 0;
+      const M = mults();
+      return owned * m.rate * (m.kind === 'gather' ? M.gather : M.speed) * (m.id === 'boardAssembler' ? M.board : 1);
+    }
+    function singleCost(m){ return m.cost * Math.pow(COST_GROWTH, state.machines[m.id] || 0); }
+    function bulkCost(m, n){
+      const base = singleCost(m);
+      return base * (Math.pow(COST_GROWTH, n) - 1) / (COST_GROWTH - 1);
+    }
+    function sellPrice(productId){ return PRODUCTS[productId].price * mults().price; }
+    function rawSellPrice(){ return 1 * mults().price; }
+
+    /* ================= PRODUCTION TICK ================= */
+    /* Allocation order: gatherers/processors in card order first, then
+       Priority assembly lines (card order), then Normal assembly lines
+       (card order). Paused assembly lines consume and produce nothing.
+       The same ordered pass drives rates, net rates and $/s, so the
+       preview always matches what actually happens. */
+    function orderedMachines(){
+      const nonAssembly = MACHINES.filter(m => m.kind !== 'assemble');
+      const assembly = MACHINES.filter(m => m.kind === 'assemble');
+      const prio = assembly.filter(m => lineMode(m) === 'priority');
+      const norm = assembly.filter(m => lineMode(m) === 'normal');
+      const paused = assembly.filter(m => lineMode(m) === 'paused');
+      return [...nonAssembly, ...prio, ...norm, ...paused];
+    }
+    function runProduction(dt){
+      const M = mults();
+      const rates = {}, limiting = {}, maxRates = {};
+      const net = {}; RES_ORDER.forEach(r => net[r] = 0);
+      let moneyRate = 0;
+      const diverted = state.order && state.order.status === 'active' ? state.order.product : null;
+
+      for (const m of orderedMachines()) {
+        const owned = state.machines[m.id] || 0;
+        const maxRate = owned * m.rate * (m.kind === 'gather' ? M.gather : M.speed) * (m.id === 'boardAssembler' ? M.board : 1);
+        maxRates[m.id] = maxRate;
+        if (m.kind === 'assemble' && lineMode(m) === 'paused') {
+          rates[m.id] = 0; limiting[m.id] = null;
+          continue;
+        }
+        let rate = maxRate, limitRes = null;
+        const inputs = machineInputs(m);
+        if (inputs && owned > 0) {
+          for (const r of Object.keys(inputs)) {
+            const cap = state.inv[r] / inputs[r];   // spec: actualRate limited by availableInput / inputPerUnit
+            if (cap < rate) { rate = cap; limitRes = r; }
+          }
+        }
+        rate = Math.max(0, rate);
+        rates[m.id] = rate; limiting[m.id] = limitRes;
+        if (rate <= 0) continue;
+        if (inputs) for (const r of Object.keys(inputs)) {
+          state.inv[r] -= rate * dt * inputs[r];
+          if (state.inv[r] < 0) state.inv[r] = 0;
+          net[r] -= rate * inputs[r];
+        }
+        const out = machineOutput(m);
+        const producedAmt = rate * dt;
+        if (m.kind === 'assemble') {
+          state.produced[out] = (state.produced[out] || 0) + producedAmt;
+          if (out === diverted) {
+            state.order.stockpile += producedAmt;
+          } else {
+            const gain = producedAmt * PRODUCTS[out].price * M.price;
+            state.money += gain; state.lifetimeEarnings += gain; state.runEarnings += gain;
+            state.soldCount[out] = (state.soldCount[out] || 0) + producedAmt;
+            state.stats.itemsSold += producedAmt;
+            moneyRate += rate * PRODUCTS[out].price * M.price;
+          }
+        } else {
+          state.inv[out] += producedAmt;
+          state.produced[out] = (state.produced[out] || 0) + producedAmt;
+          net[out] += rate;
+        }
+      }
+      lastCalc = { rates, limiting, maxRates, net, moneyRate };
+    }
+
+    /* ================= PLAYER ACTIONS ================= */
+    function floatNum(anchorEl, text, opts){
+      if (!anchorEl) return;
+      const span = document.createElement('span');
+      span.className = 'float-num';
+      span.textContent = text;
+      if (opts && opts.centered) {
+        span.style.left = '0'; span.style.width = '100%'; span.style.textAlign = 'center';
+        span.style.top = '-10px'; span.style.fontSize = '.95rem';
+        span.style.background = 'rgba(255,255,255,.92)'; span.style.borderRadius = '999px';
+        span.style.padding = '2px 4px'; span.style.whiteSpace = 'nowrap';
+      } else {
+        span.style.left = (30 + Math.random() * 40) + '%';
+        span.style.top = '4px';
+      }
+      anchorEl.appendChild(span);
+      span.addEventListener('animationend', () => span.remove());
+      setTimeout(() => span.remove(), 1200);
+    }
+    function doGather(resId, btn, floatText){
+      gridDirty = true;
+      const gain = mults().click;
+      state.inv[resId] += gain;
+      state.stats.clicks += 1;
+      if (btn) {
+        floatNum(btn, floatText || ('+' + fmt(gain)), floatText ? { centered:true } : null);
+        btn.classList.remove('squash'); void btn.offsetWidth; btn.classList.add('squash');
+      }
+      tutAdvance(); checkAchievements(); render();
+    }
+    /* Smart Harvest: gather the unlocked raw material currently held least.
+       Ties break in RAW_ORDER (Silicon, Copper, Plastic, Glass, Lithium). */
+    function doSmartHarvest(){
+      const unlocked = RAW_ORDER.filter(r => !RES[r].gated || state.unlocked2nd);
+      let target = unlocked[0];
+      for (const r of unlocked) { if (state.inv[r] < state.inv[target]) target = r; }
+      const gain = mults().click;
+      doGather(target, $('harvestBtn'), '+' + fmt(gain) + ' ' + RES[target].name);
+    }
+    function doSellRaw(resId, all){
+      gridDirty = true;
+      const have = Math.floor(state.inv[resId]);
+      const n = all ? have : Math.min(1, have);
+      if (n <= 0) return;
+      state.inv[resId] -= n;
+      const gain = n * rawSellPrice();
+      state.money += gain; state.lifetimeEarnings += gain; state.runEarnings += gain;
+      state.stats.itemsSold += n;
+      tutAdvance(); checkAchievements(); render();
+    }
+    function canCraft(m){
+      const inputs = machineInputs(m);
+      return Object.keys(inputs).every(r => state.inv[r] >= inputs[r]);
+    }
+    function doCraft(m, btn){
+      if (!canCraft(m)) return;
+      gridDirty = true;
+      const inputs = machineInputs(m);
+      for (const r of Object.keys(inputs)) state.inv[r] -= inputs[r];
+      const out = machineOutput(m);
+      state.inv[out] += 1;
+      state.produced[out] = (state.produced[out] || 0) + 1;
+      if (btn) floatNum(btn, '+1');
+      tutAdvance(); checkAchievements(); render();
+    }
+    function doBuyMachine(m){
+      const n = bulk;
+      const cost = bulkCost(m, n);
+      if (state.money < cost) return;
+      state.money -= cost;
+      state.machines[m.id] = (state.machines[m.id] || 0) + n;
+      tutAdvance(); checkAchievements(); render();
+    }
+    function doBuyUpgrade(u){
+      const lvl = state.upgrades[u.id] || 0;
+      if (lvl >= u.costs.length) return;
+      const cost = u.costs[lvl];
+      if (state.money < cost) return;
+      state.money -= cost;
+      state.upgrades[u.id] = lvl + 1;
+      toast('⬆️ ' + u.name + ' upgraded to level ' + (lvl + 1) + '!', 'good');
+      checkAchievements(); render();
+    }
+    function earn(amount){ // money from orders (no price multipliers, per spec)
+      state.money += amount; state.lifetimeEarnings += amount; state.runEarnings += amount;
+    }
+    function pulseMoney(){
+      const chip = document.getElementById('moneyChip');
+      chip.classList.remove('pulse'); void chip.offsetWidth; chip.classList.add('pulse');
+    }
+    /* ================= ORDERS ================= */
+    function orderCandidates(){
+      return MACHINES.filter(m => m.kind === 'assemble' && (state.machines[m.id] || 0) > 0);
+    }
+    /* Contract offers arrive as a set of three — Easy / Medium / Hard.
+       Sizes scale with your track record: every delivered contract makes
+       clients offer slightly bigger orders (up to +40% at 10 delivered).
+       Hard offers always target your highest-value line and pay 3.25×. */
+    function offerScale(){ return 1 + 0.04 * Math.min((state.contractStats && state.contractStats.done) || 0, 10); }
+    function makeOffer(tier, m, secs, mult, minQty, maxQty, capSecs){
+      const rate = machineMaxRate(m);
+      let qty = Math.round(rate * secs * offerScale());
+      qty = Math.min(qty, Math.floor(rate * capSecs));   // cap: always fillable inside the 3-minute window
+      qty = Math.max(minQty, Math.min(maxQty, qty));
+      return { tier, product:m.product, qty, reward: qty * PRODUCTS[m.product].price * mult, mult, client: CLIENTS[Math.floor(Math.random() * CLIENTS.length)].name };
+    }
+    function genOffers(){
+      const cands = orderCandidates();
+      if (!cands.length) return [];
+      const pick = () => cands[Math.floor(Math.random() * cands.length)];
+      const best = cands.reduce((a, b) => PRODUCTS[b.product].price > PRODUCTS[a.product].price ? b : a, cands[0]);
+      return [
+        makeOffer('easy', pick(), 45, 2, 3, 60, 70),
+        makeOffer('medium', pick(), 90, 2.5, 5, 100, 135),
+        makeOffer('hard', best, 150, 3.25, 5, 160, 150),
+      ];
+    }
+    function maybeOfferOrder(now){
+      if (state.order) return;
+      if (state.offers && state.offers.length) return;
+      if (!state.nextOfferAt) { state.nextOfferAt = now + 15000; return; }
+      if (now < state.nextOfferAt) return;
+      const offers = genOffers();
+      if (!offers.length) return;
+      state.offers = offers;
+      toast('📋 New contracts on the board — three offers, Easy to Hard. Pick your fight.', 'warn');
+      render();
+    }
+    function acceptOffer(idx){
+      const offer = state.offers && state.offers[idx];
+      if (!offer || state.order) return;
+      state.order = { status:'active', product:offer.product, qty:offer.qty, reward:offer.reward, mult:offer.mult || 2.5, tier:offer.tier || 'medium', deadline: Date.now() + 3 * 60 * 1000, stockpile:0, client:offer.client || '' };
+      state.offers = [];
+      let autoMachine = null;
+      if (isAutoPrioritizeOn()) {
+        autoMachine = orderLineMachine(state.order.product);
+        if (autoMachine) {
+          state.order.prevMode = lineMode(autoMachine);
+          state.order.autoPriorityApplied = true;
+          if (!state.lineModes) state.lineModes = defaultLineModes();
+          state.lineModes[autoMachine.id] = 'priority';
+          gridDirty = true;
+        } else {
+          state.order.autoPriorityApplied = false;
+          delete state.order.prevMode;
+        }
+      } else {
+        state.order.autoPriorityApplied = false;
+        delete state.order.prevMode;
+      }
+      toast('📋 Contract signed! ' + PRODUCTS[state.order.product].name + ' production is now being stockpiled.', 'good');
+      if (autoMachine && state.order.autoPriorityApplied) {
+        toast('📋 ' + autoMachine.name + ' set to EXPEDITE for this contract', 'good');
+      }
+      save(); render();
+    }
+    function dismissOffers(){
+      if (!state.offers || !state.offers.length) return;
+      state.offers = [];
+      state.nextOfferAt = Date.now() + 15000;
+      render();
+    }
+    function sellStockpileAtBase(product, units){
+      if (units <= 0) return 0;
+      const gain = units * PRODUCTS[product].price; // base price, no multipliers
+      earn(gain);
+      state.soldCount[product] = (state.soldCount[product] || 0) + units;
+      state.stats.itemsSold += units;
+      return gain;
+    }
+    function deliverOrder(){
+      const o = state.order;
+      if (!o || o.status !== 'active' || o.stockpile < o.qty) return;
+      const excess = o.stockpile - o.qty;
+      earn(o.reward);
+      state.soldCount[o.product] = (state.soldCount[o.product] || 0) + o.qty;
+      state.stats.itemsSold += o.qty;
+      state.stats.ordersCompleted += 1;
+      if (!state.contractStats) state.contractStats = { done:0, missed:0, streak:0 };
+      state.contractStats.done += 1;
+      state.contractStats.streak += 1;
+      if (excess > 0) sellStockpileAtBase(o.product, excess);
+      toast('🎉 Contract delivered! Paid ' + money(o.reward) + ' (' + (o.mult || 2.5) + '× value).', 'good');
+      pulseMoney();
+      restoreAutoPriority(o);
+      state.order = null;
+      state.nextOfferAt = Date.now() + 15000;
+      checkAchievements(); render();
+    }
+    function failOrder(silent){
+      const o = state.order;
+      if (!o || o.status !== 'active') return;
+      if (!state.contractStats) state.contractStats = { done:0, missed:0, streak:0 };
+      state.contractStats.missed += 1;
+      state.contractStats.streak = 0;
+      const soldGain = sellStockpileAtBase(o.product, Math.floor(o.stockpile));
+      if (!silent) toast('⏰ Contract expired! Stockpiled ' + PRODUCTS[o.product].name + ' sold at base price (' + money(soldGain) + ').', 'bad');
+      restoreAutoPriority(o);
+      state.order = null;
+      state.nextOfferAt = Date.now() + 15000;
+    }
+
+    /* ================= ACHIEVEMENTS ================= */
+    function checkAchievements(){
+      for (const a of ACHIEVEMENTS) {
+        if (!state.achievements[a.id] && a.test(state)) {
+          state.achievements[a.id] = true;
+          toast('🏆 Achievement unlocked: ' + a.name + '!', 'good');
+        }
+      }
+      checkPlantLog(false);
+      if (!state.unlocked2nd && state.lifetimeEarnings >= GATE_EARNINGS) {
+        state.unlocked2nd = true;
+        toast('⚡ Wing B power restored — new materials available: Glass and Lithium.', 'warn');
+        applyGateVisibility();
+      }
+    }
+
+    /* ================= IPO PRESTIGE ================= */
+    function ipoSharesAvailable(){ return Math.floor(Math.sqrt(state.runEarnings / 100000)); }
+    function nextShareInfo(){
+      const avail = ipoSharesAvailable();
+      const nextAt = Math.pow(avail + 1, 2) * 100000;
+      return { nextAt, toGo: Math.max(0, nextAt - state.runEarnings) };
+    }
+    function openIpoModal(){
+      const shares = ipoSharesAvailable();
+      if (shares < 1) return;
+      openModal(
+        '<h2>🏭 Sign the Buyout — Take Plant No. 9?</h2>' +
+        '<p>Buying the plant from corporate earns you <strong>' + shares + ' Ownership Share' + (shares === 1 ? '' : 's') + '</strong>. Each share permanently gives <strong>+5% production speed</strong> and <strong>+5% sell prices</strong>.</p>' +
+        '<p><strong>Will reset:</strong></p><ul>' +
+        '<li>Money back to $0</li><li>All inventory (raw materials &amp; components)</li>' +
+        '<li>All machines and gatherers</li><li>All upgrades</li><li>All production line modes reset to NORMAL</li><li>Any active contract (cancelled, no reward)</li></ul>' +
+        '<p><strong>You keep:</strong></p><ul>' +
+        '<li>Ownership Shares (' + state.shares + ' owned → ' + (state.shares + shares) + ' after the buyout)</li>' +
+        '<li>Plant Record</li><li>Lifetime stats &amp; products shipped</li><li>Contracts completed (' + state.stats.ordersCompleted + ')</li>' +
+        '<li>Glass/Lithium discovery</li></ul>' +
+        '<div class="modal-actions">' +
+        '<button type="button" id="ipoCancelBtn">Cancel</button>' +
+        '<button type="button" class="btn-orange" id="ipoConfirmBtn">Sign the buyout — earn ' + shares + ' share' + (shares === 1 ? '' : 's') + '</button></div>'
+      );
+      const cancelBtn = document.getElementById('ipoCancelBtn');
+      if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+      const confirmBtn = document.getElementById('ipoConfirmBtn');
+      if (confirmBtn) confirmBtn.addEventListener('click', confirmIpo);
+    }
+    function confirmIpo(){
+      const shares = ipoSharesAvailable();
+      if (shares < 1) { closeModal(); return; }
+      state.shares += shares;
+      state.totalIPOs += 1;
+      state.money = 0;
+      state.lineModes = defaultLineModes();
+      RES_ORDER.forEach(r => state.inv[r] = 0);
+      MACHINES.forEach(m => state.machines[m.id] = 0);
+      Object.keys(state.upgrades).forEach(k => state.upgrades[k] = 0);
+      // IPO cancels the order and resets modes to Normal — discard the order
+      // without restoring prevMode (no stale restore afterwards).
+      if (state.order) clearAutoPriorityFlag(state.order);
+      state.order = null;
+      state.offers = [];
+      state.nextOfferAt = Date.now() + 15000;
+      state.runEarnings = 0;
+      closeModal();
+      toast('🏭 Buyout signed! You earned ' + shares + ' Ownership Share' + (shares === 1 ? '' : 's') + '. Total bonus: +' + (state.shares * 5) + '% speed & prices.', 'good');
+      pulseMoney();
+      save(); render();
+    }
+
+    /* ================= OFFLINE EARNINGS ================= */
+    function applyOffline(){
+      const awaySec = (Date.now() - (state.lastSeen || Date.now())) / 1000;
+      // Expired active order while away: fail it under the normal rules.
+      if (state.order && state.order.status === 'active' && state.order.deadline && Date.now() > state.order.deadline) {
+        failOrder(true);
+        orderExpiredAway = true;
+      }
+      if (awaySec < 60) return null;
+      const secs = Math.min(awaySec, 8 * 3600);
+      const moneyGain = (state.snapshot.moneyRate || 0) * secs * 0.5;
+      const gains = {};
+      RAW_ORDER.forEach(r => {
+        const g = (state.snapshot.gatherRates && state.snapshot.gatherRates[r] || 0) * secs * 0.5;
+        if (g > 0) { gains[r] = g; state.inv[r] += g; }
+      });
+      if (moneyGain > 0) earn(moneyGain);
+      return { awaySec, moneyGain, gains };
+    }
+    function showWelcomeBack(info){
+      let rows = '';
+      RAW_ORDER.forEach(r => {
+        if (info.gains[r]) rows += '<li>' + RES[r].icon + ' ' + RES[r].name + ': <strong>+' + fmt(info.gains[r]) + '</strong></li>';
+      });
+      openModal(
+        '<h2>🌙 SHIFT REPORT</h2>' +
+        '<p><em>“Kept her humming while you were gone. Do not make a habit of it.” — Doss</em></p>' +
+        '<p>You were off the floor for <strong>' + durationFmt(info.awaySec) + '</strong>. The plant kept working at 50% efficiency (capped at 8 hours).</p>' +
+        '<p>💰 Money earned: <strong>' + money(info.moneyGain) + '</strong></p>' +
+        (rows ? '<p>Raw materials gathered:</p><ul>' + rows + '</ul>' : '') +
+        '<p class="hint">Note: only salvage crews and auto-sell income run while you are away — processors and assembly lines hold, so no components or products were made.</p>' +
+        '<div class="modal-actions"><button type="button" class="btn-green" onclick="closeModal()">Collect</button></div>'
+      );
+    }
+
+    /* ================= TUTORIAL ================= */
+    function compProduced(){
+      return ['wire','chip','casing','board','screen','battery'].reduce((a,r)=> a + (state.produced[r]||0), 0);
+    }
+    function tutAdvance(){
+      const t = state.tutorial;
+      if (t.done) return;
+      if (t.step === 0 && state.stats.clicks > 0) t.step = 1;
+      if (t.step === 1 && (state.stats.itemsSold > 0 || compProduced() > 0)) t.step = 2;
+      if (t.step === 2 && totalMachinesOf(state) > 0) t.step = 3;
+    }
+    function renderTutorial(){
+      const bar = document.getElementById('tutorialBar');
+      const t = state.tutorial;
+      if (t.done) { bar.hidden = true; return; }
+      bar.hidden = false;
+      document.getElementById('tutorialText').textContent = TUTORIAL_STEPS[t.step];
+      document.getElementById('tutorialAction').textContent = t.step === 3 ? 'Start building!' : 'Got it!';
+    }
+
+    /* ================= TOASTS & MODALS ================= */
+    function toast(msg, type){
+      const box = document.getElementById('toasts');
+      const el = document.createElement('div');
+      el.className = 'toast' + (type ? ' ' + type : '');
+      el.textContent = msg;
+      box.insertBefore(el, box.firstChild);
+      setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(-8px)'; setTimeout(() => el.remove(), 300); }, 4200);
+      while (box.children.length > 4) box.lastChild.remove();
+    }
+    function openModal(html){
+      document.getElementById('modalBox').innerHTML = html;
+      document.getElementById('modalOverlay').hidden = false;
+    }
+    function closeModal(){ document.getElementById('modalOverlay').hidden = true; }
+
+    /* ================= SETTINGS ================= */
+    let resetArmed = false;
+    function openResetModal(){
+      resetArmed = false;
+      openModal(
+        '<h2>🗑️ Reset Save?</h2>' +
+        '<p>This permanently deletes <strong>everything</strong>: money, inventory, machines, refits, the Plant Record and Ownership Shares. There is no undo.</p>' +
+        '<div class="modal-actions">' +
+        '<button type="button" onclick="closeModal()">Keep my factory</button>' +
+        '<button type="button" class="btn-danger" id="resetConfirmBtn" onclick="confirmReset()">Yes, reset everything</button></div>'
+      );
+    }
+    function confirmReset(){
+      if (!resetArmed) {
+        resetArmed = true;
+        const b = document.getElementById('resetConfirmBtn');
+        if (b) b.textContent = '⚠️ Click again to REALLY reset';
+        return;
+      }
+      try { localStorage.removeItem(SAVE_KEY); } catch(e) {}
+      state = defaultState();
+      state.nextOfferAt = Date.now() + 15000;
+      lastCalc = null;
+      closeModal();
+      applyGateVisibility();
+      save(); render(); renderTutorial();
+      toast('🗑️ Save reset. Plant No. 9 is dark again — time to bring it back.', 'warn');
+    }
+    function exportSave(){
+      save();
+      document.getElementById('saveText').value = JSON.stringify(state);
+      toast('📤 Save exported — copy the text somewhere safe.', 'good');
+    }
+    function copySave(){
+      const ta = document.getElementById('saveText');
+      if (!ta.value) { toast('Nothing to copy yet — export your save first.', 'warn'); return; }
+      ta.select();
+      const done = () => toast('📋 Save copied to clipboard.', 'good');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(ta.value).then(done, () => { document.execCommand('copy'); done(); });
+      } else { document.execCommand('copy'); done(); }
+    }
+    function importSave(){
+      const txt = document.getElementById('saveText').value.trim();
+      let parsed = null;
+      try { parsed = JSON.parse(txt); } catch(e) { parsed = null; }
+      if (!parsed || typeof parsed !== 'object' || typeof parsed.money !== 'number' || !parsed.inv || !parsed.machines) {
+        toast('❌ Invalid save data — import cancelled, your current game is untouched.', 'bad');
+        return;
+      }
+      state = migrate(parsed);
+      lastCalc = null;
+      applyGateVisibility();
+      save(); render(); renderTutorial();
+      toast('📥 Save imported successfully!', 'good');
+    }
+    /* ================= DOM BUILD ================= */
+    const $ = id => document.getElementById(id);
+    const invEls = {}, machineEls = {}, upgradeEls = {}, achEls = {}, prodEls = {}, gatherEls = {}, gridEls = {}, logEls = {};
+    const GROUP_KEY = { 'Gathering':'gathering', 'Processing':'processing', 'Assembly':'assembly' };
+    const CRAFT_BY_OUTPUT = {};
+    MACHINES.forEach(m => { if (m.craft) CRAFT_BY_OUTPUT[m.output] = m; });
+
+    /* ---------- Mobile tab navigation (CSS only applies it <=768px) ---------- */
+    function isMobileLayout(){ return window.matchMedia('(max-width: 768px)').matches; }
+    const VIEW_TO_TAB = { floor:'factory', stores:'stock', orders:'orders', upgrades:'upgrades', more:'more' };
+    const TAB_TO_VIEW = { factory:'floor', stock:'stores', orders:'orders', upgrades:'upgrades', more:'more' };
+    function showView(view){
+      if (!VIEW_TO_TAB[view]) view = 'floor';
+      document.body.dataset.view = view;
+      document.body.dataset.mobileTab = VIEW_TO_TAB[view];
+      document.querySelectorAll('[data-view-btn]').forEach(b => b.classList.toggle('active', b.dataset.viewBtn === view));
+      document.querySelectorAll('[data-tab-btn]').forEach(b => b.classList.toggle('active', b.dataset.tabBtn === VIEW_TO_TAB[view]));
+      const vs = $('viewScroll'); if (vs) vs.scrollTop = 0;
+      if (view === 'floor') setTimeout(updateFlowEdges, 60);
+    }
+    function setMobileTab(tab){ showView(TAB_TO_VIEW[tab] || 'stores'); }
+    function setFactoryGroup(key){
+      document.body.dataset.factoryGroup = key;
+      document.querySelectorAll('[data-fgroup-btn]').forEach(b => b.classList.toggle('active', b.dataset.fgroupBtn === key));
+    }
+
+    /* ---------- Desktop view navigation (CSS only applies it >=769px) ---------- */
+    function setView(view){ showView(view); }
+    function gotoFactory(){ showView('floor'); }
+
+    function buildDOM(){
+      // Mobile fixed resource grid — cells are built ONCE here and never rebuilt;
+      // render() only updates the text of the count/rate spans inside them.
+      const grid = $('resGrid');
+      if (grid) {
+        grid.innerHTML = '';
+        RES_ORDER.forEach(r => {
+          const cell = document.createElement('button');
+          cell.type = 'button';
+          cell.className = 'res-cell';
+          if (RES[r].gated) cell.dataset.gated = '1';
+          cell.setAttribute('aria-label', RES[r].raw ? (RES[r].name + ' — tap to salvage') : (RES[r].name + ' — tap to view on the Floor'));
+          cell.innerHTML = '<span class="res-top"><span class="res-icon">' + RES[r].icon + '</span><span class="res-name">' + RES_SHORT[r] + '</span></span>' +
+            '<span class="res-count">0</span><span class="res-rate rate-zero">0.0/s</span>';
+          cell.addEventListener('click', () => {
+            if (RES[r].raw) doGather(r, cell);
+            else gotoFactory('processing');
+          });
+          grid.appendChild(cell);
+          gridEls[r] = { cell, count: cell.querySelector('.res-count'), rate: cell.querySelector('.res-rate') };
+        });
+      }
+      // Gather buttons
+      const gb = $('gatherBtns'); gb.innerHTML = '';
+      RAW_ORDER.forEach(r => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'gather-btn ' + r;
+        if (RES[r].gated) b.dataset.gated = '1';
+        b.innerHTML = '<span class="g-icon">' + RES[r].icon + '</span><span>Gather ' + RES[r].name + '</span><span class="g-per"></span>';
+        b.addEventListener('click', () => doGather(r, b));
+        gb.appendChild(b);
+        gatherEls[r] = { btn: b, per: b.querySelector('.g-per') };
+      });
+      // Inventory rows
+      const il = $('invList'); il.innerHTML = '';
+      RES_ORDER.forEach(r => {
+        const row = document.createElement('div');
+        row.className = 'inv-row';
+        if (RES[r].gated) row.dataset.gated = '1';
+        let html = '<span class="inv-icon">' + RES[r].icon + '</span>' +
+          '<span class="inv-name">' + RES[r].name + '</span>' +
+          '<span class="inv-count">0</span><span class="inv-rate rate-zero">0.0/s</span>';
+        if (RES[r].raw) {
+          html += '<span class="inv-sell"><button type="button" class="sell1">Sell 1</button><button type="button" class="sellAll">Sell All</button></span>';
+        }
+        row.innerHTML = html;
+        // Mobile Stock tab: manual Craft 1 shortcut for craftable components
+        const craftMachine = CRAFT_BY_OUTPUT[r];
+        if (craftMachine) {
+          const wrap = document.createElement('span');
+          wrap.className = 'inv-craft-row';
+          const cb = document.createElement('button');
+          cb.type = 'button';
+          cb.className = 'inv-craft-btn';
+          cb.textContent = 'Craft 1 ' + RES[r].name;
+          cb.addEventListener('click', () => doCraft(craftMachine, cb));
+          wrap.appendChild(cb);
+          row.appendChild(wrap);
+          row.dataset.craftRes = r;
+          // store ref for render-time disabling via machineEls-independent lookup
+          row._craftBtn = cb;
+          row._craftMachine = craftMachine;
+        }
+        il.appendChild(row);
+        const rec = { row, count: row.querySelector('.inv-count'), rate: row.querySelector('.inv-rate'), craftBtn: row._craftBtn || null, craftMachine: row._craftMachine || null };
+        if (RES[r].raw) {
+          rec.sell1 = row.querySelector('.sell1'); rec.sellAll = row.querySelector('.sellAll');
+          rec.sell1.addEventListener('click', () => doSellRaw(r, false));
+          rec.sellAll.addEventListener('click', () => doSellRaw(r, true));
+        }
+        invEls[r] = rec;
+      });
+      // Products sold list
+      const pl = $('prodSoldList'); pl.innerHTML = '';
+      PRODUCT_ORDER.forEach(p => {
+        const row = document.createElement('div');
+        row.className = 'prod-row';
+        if (PRODUCTS[p].gated) row.dataset.gated = '1';
+        row.innerHTML = '<span>' + PRODUCTS[p].icon + '</span><span>' + PRODUCTS[p].name + '</span><span class="p-count">0</span>';
+        pl.appendChild(row);
+        prodEls[p] = row.querySelector('.p-count');
+      });
+      // Factory flow board — three columns of nodes (Concept B inside Concept A's frame)
+      const fg = $('factoryGroups'); fg.innerHTML = '';
+      const FLOW_COLS = [
+        { key:'raw',  title:'01 · RAW MATERIALS',        list: MACHINES.filter(m => m.kind === 'gather') },
+        { key:'comp', title:'02 · COMPONENTS',           list: MACHINES.filter(m => m.kind === 'process') },
+        { key:'prod', title:'03 · PRODUCTS — AUTO-SELL', list: MACHINES.filter(m => m.kind === 'assemble') },
+      ];
+      FLOW_COLS.forEach(col => {
+        const colEl = document.createElement('div');
+        colEl.className = 'flow-col';
+        colEl.dataset.col = col.key;
+        const head = document.createElement('div');
+        head.className = 'flow-col-head'; head.textContent = col.title;
+        colEl.appendChild(head);
+        let wingBShown = false;
+        col.list.forEach(m => {
+          if (m.gated && !wingBShown) {
+            wingBShown = true;
+            const wingB = document.createElement('div');
+            wingB.className = 'flow-wing'; wingB.textContent = 'WING B — ADVANCED MATERIALS';
+            colEl.appendChild(wingB);
+          }
+          const card = document.createElement('div');
+          card.className = 'fnode st-idle';
+          card.id = 'node-' + m.id;
+          if (m.gated) card.dataset.gatedNode = '1';
+          const inputs = machineInputs(m);
+          const recipe = m.kind === 'gather'
+            ? 'Salvages ' + RES[m.output].icon + ' ' + RES[m.output].name + ' automatically'
+            : recipeText(inputs, machineOutput(m)) + (m.kind === 'assemble' ? ' · auto-sells for ' + money(PRODUCTS[m.product].price) : '');
+          let html = '<div class="fn-head"><span class="fn-lamp"></span>' + (PLATES[m.id] ? '<span class="machine-plate">' + PLATES[m.id] + '</span>' : '') +
+            '<span class="machine-name">' + m.icon + ' ' + m.name + '</span><span class="owned-badge">×0</span>' +
+            (m.kind === 'assemble' ? '<span class="priority-tag">★ EXPEDITE</span>' : '') + '</div>' +
+            '<div class="fn-recipe">' + recipe + ' · base rate ' + m.rate + '/s each</div>' +
+            '<div class="fn-rate">0.00 / 0.00 /s</div>' +
+            '<span class="pill none fn-status">OFFLINE</span>';
+          if (m.kind === 'assemble') {
+            html += '<div class="mode-control" role="group" aria-label="' + m.name + ' line mode">' +
+              '<button type="button" data-mode="paused">⏸ HOLD</button>' +
+              '<button type="button" data-mode="normal">NORMAL</button>' +
+              '<button type="button" data-mode="priority">★ EXPEDITE</button></div>';
+          }
+          html += '<div class="machine-actions">';
+          if (m.craft) html += '<button type="button" class="craft-btn">Craft 1</button>';
+          html += '<button type="button" class="buy-btn">Buy</button></div>';
+          card.innerHTML = html;
+          colEl.appendChild(card);
+          const rec = { card, owned: card.querySelector('.owned-badge'), pill: card.querySelector('.fn-status'), buy: card.querySelector('.buy-btn'), rateEl: card.querySelector('.fn-rate') };
+          if (m.kind === 'assemble') {
+            rec.priorityTag = card.querySelector('.priority-tag');
+            rec.modeBtns = {};
+            card.querySelectorAll('.mode-control button').forEach(b => {
+              rec.modeBtns[b.dataset.mode] = b;
+              b.addEventListener('click', () => setLineMode(m.id, b.dataset.mode));
+            });
+          }
+          if (m.craft) {
+            rec.craft = card.querySelector('.craft-btn');
+            rec.craft.addEventListener('click', () => doCraft(m, rec.craft));
+          }
+          rec.buy.addEventListener('click', () => doBuyMachine(m));
+          if (m.kind === 'gather') {
+            card.classList.add('fn-gather');
+            card.addEventListener('click', e => {
+              if (e.target.closest('button')) return;
+              if (m.gated && !state.unlocked2nd) return;
+              doGather(m.output, card);
+            });
+          }
+          machineEls[m.id] = rec;
+        });
+        fg.appendChild(colEl);
+      });
+      buildFlowEdges();
+      // Upgrades
+      const ul = $('upgradeList'); ul.innerHTML = '';
+      UPGRADES.forEach(u => {
+        const row = document.createElement('div');
+        row.className = 'upgrade';
+        row.innerHTML = '<span class="u-icon">' + u.icon + '</span>' +
+          '<span class="u-info"><span class="u-name">' + u.name + '</span> <span class="u-level"></span><br><span class="u-desc">' + u.desc + '</span></span>' +
+          '<button type="button">Buy</button>';
+        ul.appendChild(row);
+        const rec = { row, level: row.querySelector('.u-level'), btn: row.querySelector('button') };
+        rec.btn.addEventListener('click', () => doBuyUpgrade(u));
+        upgradeEls[u.id] = rec;
+      });
+      // Plant Log
+      const ll = $('plantLogList'); ll.innerHTML = '';
+      PLANT_LOG.forEach(e => {
+        const row = document.createElement('div');
+        row.className = 'log-row locked';
+        row.innerHTML = '<span class="log-head">PLANT LOG — ENTRY ' + e.num + '</span><span class="log-title"></span><div class="log-body"></div>';
+        ll.appendChild(row);
+        logEls[e.id] = { row, title: row.querySelector('.log-title'), body: row.querySelector('.log-body'), entry: e };
+      });
+      // Achievements
+      const al = $('achList'); al.innerHTML = '';
+      ACHIEVEMENTS.forEach(a => {
+        const row = document.createElement('div');
+        row.className = 'ach-row locked';
+        row.innerHTML = '<span class="a-icon">' + a.icon + '</span><span><span class="a-name">' + a.name + '</span><br><span class="a-desc">' + a.desc + '</span></span><span class="a-check"></span>';
+        al.appendChild(row);
+        achEls[a.id] = { row, check: row.querySelector('.a-check') };
+      });
+      buildHelp();
+    }
+
+    function buildHelp(){
+      const compLines = MACHINES.filter(m => m.kind === 'process').map(m =>
+        '<li>' + m.icon + ' <strong>' + (PLATES[m.id] ? PLATES[m.id] + ' · ' : '') + RES[m.output].name + ':</strong> ' +
+        Object.keys(m.inputs).map(r => m.inputs[r] + '× ' + RES[r].name).join(' + ') + ' · ' + m.rate + '/s each</li>').join('');
+      const prodLines = PRODUCT_ORDER.map(p =>
+        '<li>' + PRODUCTS[p].icon + ' <strong>' + PRODUCTS[p].name + ' — ' + money(PRODUCTS[p].price) + ':</strong> ' +
+        Object.keys(PRODUCTS[p].inputs).map(r => PRODUCTS[p].inputs[r] + '× ' + RES[r].name).join(' + ') + '</li>').join('');
+      $('helpBody').innerHTML =
+        '<p><strong>The shift:</strong> salvage raw materials with the SALVAGE button — it pulls whichever raw material you hold least of — or tap a resource in the grid at the top to salvage that one direct (on desktop, use the Salvage buttons) → process them into components → assemble components into electronics → finished goods auto-sell off the dock → reinvest in machines and refits. Doss runs the floor; you run the plant.</p>' +
+        '<h4>Production chains</h4><ul>' + compLines + '</ul>' +
+        '<h4>Products (auto-sell prices)</h4><ul>' + prodLines + '</ul>' +
+        '<h4>Reading the floor</h4><ul>' +
+        '<li><strong>RUNNING</strong> — the machine is producing at full speed.</li>' +
+        '<li><strong>LINE DOWN</strong> — the machine is starved of an input (the pill names it). Stock piles up before the bottleneck and starves after it. Strengthen the stage before it, or ease off the stage after it.</li>' +
+        '<li><strong>HELD</strong> — an assembly line you held on purpose. It uses no inputs and makes nothing, and it does not count as LINE DOWN.</li>' +
+        '<li><strong>EXPEDITE</strong> — assembly lines fight over shared parts (Boards, Casings, Screens, Batteries, Wire). EXPEDITE lines are fed first, then NORMAL lines, each in card order. Use HOLD / NORMAL / EXPEDITE on any assembly card to decide who gets the parts — for example, HOLD the Lamp line and EXPEDITE Phones to finish a contract. Switching is free and takes effect on the next tick.</li>' +
+        '<li>The grid at the top shows every resource in Stores with its net rate per second — green means gaining, red means draining — so you can read the whole plant from any tab.</li>' +
+        '<li>Storage is <strong>unlimited</strong> — machines only ever stop when starved.</li></ul>' +
+        '<h4>Contracts</h4><p>Clients post contracts <strong>three at a time — Easy (2× pay), Medium (2.5×) and Hard (3.25×)</strong>. Hard offers always target your highest-value line. Offer sizes scale with your track record: each delivered contract makes the next offers bigger, up to +40%. Sign one and that product is diverted into a stockpile instead of auto-selling. Fill the stockpile before the 3-minute timer ends and deliver it for the listed multiple of base value. Run out of time and the stockpile sells at base price — no other penalty, but the miss goes on your record. With <strong>Auto-expedite contract line</strong> on (Contracts panel or Settings), signing a contract sets its line to EXPEDITE until the contract ends, then restores the mode it had before — unless you change that line yourself during the contract.</p>' +
+        '<h4>Offline earnings — the night shift</h4><p>While you are off the floor, salvage crews and auto-sell income keep running at <strong>50% efficiency for up to 8 hours</strong>. Processors and assembly lines hold while you are gone. You get a Shift Report when you return.</p>' +
+        '<h4>Buyout</h4><p>Buying Plant No. 9 from corporate resets money, inventory, machines and refits, and pays Ownership Shares: <strong>shares = √(earnings this run ÷ $100,000)</strong>. Each share permanently adds <strong>+5% production speed and +5% sell prices</strong>. The Plant Record, lifetime stats and contracts completed are kept.</p>' +
+        '<h4>Wing B</h4><p>Glass and Lithium (plus Screens, Batteries, Phones and more) unlock when Wing B reopens at <strong>' + money(GATE_EARNINGS) + ' contract value shipped</strong>.</p>';
+    }
+
+    function applyGateVisibility(){
+      document.querySelectorAll('[data-gated]').forEach(el => {
+        el.style.display = state.unlocked2nd ? '' : 'none';
+      });
+    }
+
+
+    /* ================= FLOW BOARD EDGES & TICKER ================= */
+    const PRODUCER_BY_RES = {};
+    MACHINES.forEach(m => { if (m.kind !== 'assemble') PRODUCER_BY_RES[m.output] = m.id; });
+    const FLOW_EDGES = [];
+    MACHINES.forEach(m => {
+      const inp = machineInputs(m);
+      if (!inp) return;
+      Object.keys(inp).forEach(r => {
+        const from = PRODUCER_BY_RES[r];
+        if (from && from !== m.id) FLOW_EDGES.push({ from, to: m.id, res: r, qty: inp[r] });
+      });
+    });
+    let flowEdgeEls = [];
+    function buildFlowEdges(){
+      const svg = $('flowSvg'), lab = $('flowLabels');
+      if (!svg || !lab) return;
+      const NS = 'http://www.w3.org/2000/svg';
+      flowEdgeEls = FLOW_EDGES.map(e => {
+        const p = document.createElementNS(NS, 'path');
+        p.setAttribute('class', 'flow-path stopped');
+        svg.appendChild(p);
+        const d = document.createElement('div');
+        d.className = 'flow-label'; d.style.display = 'none';
+        lab.appendChild(d);
+        return { edge: e, path: p, label: d };
+      });
+    }
+    function updateFlowEdges(){
+      const board = $('flowBoard');
+      if (!board || !flowEdgeEls.length) return;
+      if (document.body.dataset.view !== 'floor') return;
+      const bw = board.scrollWidth, bh = board.scrollHeight;
+      if (!bw || !bh) return;
+      const svg = $('flowSvg');
+      svg.setAttribute('width', bw); svg.setAttribute('height', bh);
+      svg.setAttribute('viewBox', '0 0 ' + bw + ' ' + bh);
+      const br = board.getBoundingClientRect();
+      flowEdgeEls.forEach(rec => {
+        const aEl = machineEls[rec.edge.from] && machineEls[rec.edge.from].card;
+        const bEl = machineEls[rec.edge.to] && machineEls[rec.edge.to].card;
+        if (!aEl || !bEl) return;
+        const a = aEl.getBoundingClientRect(), b = bEl.getBoundingClientRect();
+        let x1, y1, x2, y2, d;
+        if (b.left >= a.right - 4) {           // target to the right: right edge -> left edge
+          x1 = a.right - br.left; y1 = a.top - br.top + a.height / 2;
+          x2 = b.left - br.left;  y2 = b.top - br.top + b.height / 2;
+          const dx = Math.max(28, (x2 - x1) / 2);
+          d = 'M ' + x1 + ' ' + y1 + ' C ' + (x1 + dx) + ' ' + y1 + ', ' + (x2 - dx) + ' ' + y2 + ', ' + x2 + ' ' + y2;
+        } else if (b.top >= a.bottom - 4) {    // target below (phone stepper): bottom -> top
+          x1 = a.left - br.left + a.width / 2; y1 = a.bottom - br.top;
+          x2 = b.left - br.left + b.width / 2; y2 = b.top - br.top;
+          const dy = Math.max(20, (y2 - y1) / 2);
+          d = 'M ' + x1 + ' ' + y1 + ' C ' + x1 + ' ' + (y1 + dy) + ', ' + x2 + ' ' + (y2 - dy) + ', ' + x2 + ' ' + y2;
+        } else {                               // fallback: centre -> centre
+          x1 = a.left - br.left + a.width; y1 = a.top - br.top + a.height / 2;
+          x2 = b.left - br.left; y2 = b.top - br.top + b.height / 2;
+          d = 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2;
+        }
+        rec.path.setAttribute('d', d);
+        const consumerRate = lastCalc ? (lastCalc.rates[rec.edge.to] || 0) : 0;
+        const perMin = consumerRate * rec.edge.qty * 60;
+        const targetStarved = bEl.classList.contains('st-starved');
+        if (perMin > 0.01) {
+          rec.path.setAttribute('class', 'flow-path flowing');
+          rec.path.style.animationDuration = Math.max(0.45, Math.min(1.8, 1.9 - Math.min(perMin, 90) / 60)) + 's';
+        } else if (targetStarved) {
+          rec.path.setAttribute('class', 'flow-path blocked');
+          rec.path.style.animationDuration = '';
+        } else {
+          rec.path.setAttribute('class', 'flow-path stopped');
+          rec.path.style.animationDuration = '';
+        }
+        const consumerOwned = state.machines[rec.edge.to] || 0;
+        if (consumerOwned > 0) {
+          rec.label.style.display = '';
+          rec.label.textContent = RES_SHORT[rec.edge.res] + ' ' + (perMin > 0.01 ? '+' : '') + (perMin >= 100 ? Math.round(perMin) : perMin >= 1 ? (Math.round(perMin * 10) / 10) : (Math.round(perMin * 100) / 100)) + '/min';
+          rec.label.classList.toggle('hot', targetStarved);
+          rec.label.style.left = ((x1 + x2) / 2) + 'px';
+          rec.label.style.top = ((y1 + y2) / 2) + 'px';
+        } else {
+          rec.label.style.display = 'none';
+        }
+      });
+    }
+    function highlightNode(id){
+      const rec = machineEls[id];
+      if (!rec || !rec.card) return;
+      rec.card.scrollIntoView({ block:'center', behavior:'smooth' });
+      rec.card.classList.add('highlight');
+      setTimeout(() => rec.card.classList.remove('highlight'), 2400);
+    }
+    function renderTicker(starvedInfo){
+      // Buyout segment of the ticker
+      const avail = ipoSharesAvailable();
+      const info = nextShareInfo();
+      const gainEl = $('tickerBuyoutGain'), barEl = $('tickerBuyoutBar'), nextEl = $('tickerBuyoutNext');
+      if (gainEl) gainEl.textContent = avail > 0 ? '+' + avail + ' NOW' : '';
+      if (barEl) {
+        const cur = Math.pow(avail, 2) * 100000;
+        const span = Math.max(1, info.nextAt - cur);
+        barEl.style.width = Math.min(100, Math.max(0, (state.runEarnings - cur) / span * 100)) + '%';
+      }
+      if (nextEl) nextEl.textContent = 'NEXT SHARE ' + money(info.toGo) + ' TO GO';
+      // Worst bottleneck
+      const bnBtn = $('tickerBottleneck'), bnTxt = $('tickerBottleneckText');
+      if (bnBtn && bnTxt) {
+        if (starvedInfo && starvedInfo.length) {
+          const worst = starvedInfo.reduce((a, b) => b.shortfall > a.shortfall ? b : a, starvedInfo[0]);
+          const plate = PLATES[worst.id] || worst.id;
+          const sf = worst.shortfall >= 10 ? Math.round(worst.shortfall) : worst.shortfall.toFixed(1);
+          bnTxt.textContent = '⚠ ' + plate + ' STARVED: ' + RES_SHORT[worst.lim].toUpperCase() + ' −' + sf + '/min';
+          bnBtn.dataset.machine = worst.id;
+          bnBtn.classList.add('alert');
+        } else {
+          bnTxt.textContent = '✓ ALL LINES CLEAR';
+          bnBtn.dataset.machine = '';
+          bnBtn.classList.remove('alert');
+        }
+      }
+      // Contract segment
+      const ctTxt = $('tickerContractText');
+      if (ctTxt) {
+        const o = state.order;
+        if (o && o.status === 'active') {
+          const remain = Math.max(0, o.deadline - Date.now());
+          const mm = Math.floor(remain / 60000), ss = Math.floor((remain % 60000) / 1000);
+          const who = o.client ? o.client.split(' ')[0].toUpperCase() : PRODUCTS[o.product].name.toUpperCase();
+          ctTxt.textContent = who + ' · ' + mm + ':' + String(ss).padStart(2, '0');
+        } else if (state.offers && state.offers.length) {
+          ctTxt.textContent = '📋 ' + state.offers.length + ' OFFERS WAITING';
+        } else if (state.nextOfferAt) {
+          const secs = Math.max(0, Math.ceil((state.nextOfferAt - Date.now()) / 1000));
+          ctTxt.textContent = 'NEXT OFFERS ~0:' + String(secs).padStart(2, '0');
+        } else {
+          ctTxt.textContent = '—';
+        }
+      }
+    }
+    /* ================= RENDER ================= */
+    function render(){
+      renderAutoPrioToggles();
+      const M = mults();
+      $('hMoney').textContent = money(state.money);
+      const _lh = $('hLifetime'); if (_lh) _lh.textContent = money(state.lifetimeEarnings);
+      $('hRate').textContent = money(lastCalc ? lastCalc.moneyRate : 0) + '/s';
+      $('hShares').textContent = fmt(state.shares);
+      $('hShareBonus').textContent = state.shares > 0 ? '(+' + (state.shares * 5) + '% speed & prices)' : '';
+
+      RAW_ORDER.forEach(r => { gatherEls[r].per.textContent = '+' + fmt(M.click) + ' / click'; });
+
+      // Fixed resource grid: text-only updates, throttled to every 3rd render
+      // (~300ms at the game's 100ms tick; a render-count throttle, so it stays
+      // steady even where the page clock is shifted). Cell size and position
+      // never change — only the count/rate span text is written.
+      if (gridDirty || ++gridSkips >= 3) {
+        gridDirty = false; gridSkips = 0;
+        RES_ORDER.forEach(r => {
+          const g = gridEls[r];
+          if (!g) return;
+          g.count.textContent = fmt(state.inv[r]);
+          const net = lastCalc ? (lastCalc.net[r] || 0) : 0;
+          g.rate.textContent = rateFmt(net);
+          g.rate.className = 'res-rate ' + (net > 0.001 ? 'rate-pos' : net < -0.001 ? 'rate-neg' : 'rate-zero');
+        });
+      }
+
+      RES_ORDER.forEach(r => {
+        const rec = invEls[r];
+        if (rec.craftBtn && rec.craftMachine) rec.craftBtn.disabled = !canCraft(rec.craftMachine);
+        rec.count.textContent = fmt(state.inv[r]);
+        const net = lastCalc ? (lastCalc.net[r] || 0) : 0;
+        rec.rate.textContent = rateFmt(net);
+        rec.rate.className = 'inv-rate ' + (net > 0.001 ? 'rate-pos' : net < -0.001 ? 'rate-neg' : 'rate-zero');
+        if (rec.sell1) {
+          const have = Math.floor(state.inv[r]);
+          rec.sell1.disabled = have < 1;
+          rec.sellAll.disabled = have < 1;
+          rec.sell1.textContent = 'Sell 1 (' + priceFmt(rawSellPrice()) + ')';
+          rec.sellAll.textContent = 'Sell All (' + have + ')';
+        }
+      });
+      PRODUCT_ORDER.forEach(p => { prodEls[p].textContent = fmt(state.soldCount[p] || 0); });
+
+      let starvedCount = 0;
+      const starvedInfo = [];
+      MACHINES.forEach(m => {
+        const rec = machineEls[m.id];
+        const owned = state.machines[m.id] || 0;
+        rec.owned.textContent = '×' + fmt(owned);
+        // priority / pause UI (assembly lines only)
+        const mode = m.kind === 'assemble' ? lineMode(m) : 'normal';
+        if (rec.modeBtns) {
+          Object.keys(rec.modeBtns).forEach(k => {
+            const b = rec.modeBtns[k];
+            b.className = (k === mode) ? ('active-' + k) : '';
+            b.setAttribute('aria-pressed', k === mode ? 'true' : 'false');
+          });
+        }
+        if (rec.priorityTag) rec.priorityTag.classList.toggle('show', mode === 'priority');
+        rec.card.classList.toggle('is-priority', m.kind === 'assemble' && mode === 'priority');
+        rec.card.classList.toggle('is-paused', m.kind === 'assemble' && mode === 'paused');
+        // status — light + word taxonomy for the flow board
+        const rateNow = lastCalc ? (lastCalc.rates[m.id] || 0) : 0;
+        const maxNow = lastCalc ? (lastCalc.maxRates[m.id] || 0) : machineMaxRate(m);
+        if (rec.rateEl) rec.rateEl.textContent = rateNow.toFixed(2) + ' / ' + maxNow.toFixed(2) + ' /s';
+        let stClass = 'st-idle';
+        const locked = !!(m.gated && !state.unlocked2nd);
+        if (locked) { rec.pill.className = 'pill locked fn-status'; rec.pill.textContent = '🔒 LOCKED — ' + money(GATE_EARNINGS) + ' LIFETIME'; stClass = 'st-locked'; }
+        else if (owned === 0) { rec.pill.className = 'pill none fn-status'; rec.pill.textContent = 'OFFLINE — NOT INSTALLED'; }
+        else if (m.kind === 'assemble' && mode === 'paused') { rec.pill.className = 'pill paused fn-status'; rec.pill.textContent = '⏸ HELD'; stClass = 'st-held'; }
+        else if (m.kind === 'gather') { rec.pill.className = 'pill running fn-status'; rec.pill.textContent = '▶ RUNNING'; stClass = 'st-running'; }
+        else if (maxNow > 0 && rateNow >= 0.95 * maxNow) { rec.pill.className = 'pill running fn-status'; rec.pill.textContent = '▶ RUNNING'; stClass = 'st-running'; }
+        else {
+          const lim = lastCalc ? lastCalc.limiting[m.id] : null;
+          if (lim && maxNow > 0) {
+            const inp = machineInputs(m);
+            const shortfall = Math.max(0, (maxNow - rateNow) * (inp && inp[lim] ? inp[lim] : 1) * 60);
+            rec.pill.className = 'pill starved fn-status';
+            rec.pill.textContent = '⚠ STARVED: ' + RES_SHORT[lim].toUpperCase() + ' −' + (shortfall >= 10 ? Math.round(shortfall) : shortfall.toFixed(1)) + '/min';
+            starvedCount++;
+            starvedInfo.push({ id:m.id, lim, shortfall });
+            stClass = 'st-starved';
+          } else if (rateNow > 0) { rec.pill.className = 'pill running fn-status'; rec.pill.textContent = '▶ RUNNING'; stClass = 'st-running'; }
+          else { rec.pill.className = 'pill none fn-status'; rec.pill.textContent = '○ IDLE'; }
+        }
+        rec.card.classList.remove('st-running','st-starved','st-held','st-idle','st-locked');
+        rec.card.classList.add(stClass);
+        rec.card.classList.toggle('has-problem', stClass === 'st-starved' || stClass === 'st-held' || stClass === 'st-locked');
+        const cost = bulkCost(m, bulk);
+        rec.buy.textContent = 'Buy ×' + bulk + ' — ' + priceFmt(cost) + (state.money < cost ? ' (short ' + priceFmt(cost - state.money) + ')' : '');
+        rec.buy.disabled = state.money < cost || locked;
+        if (rec.craft) rec.craft.disabled = !canCraft(m) || locked;
+      });
+
+      const fb = $('factoryBadge');
+      if (fb) { fb.textContent = String(starvedCount); fb.classList.toggle('show', starvedCount > 0); }
+      const dfb = $('deskFactoryBadge');
+      if (dfb) { dfb.textContent = String(starvedCount); dfb.classList.toggle('show', starvedCount > 0); }
+      renderTicker(starvedInfo);
+      if (++flowSkips >= 3) { flowSkips = 0; updateFlowEdges(); }
+
+      UPGRADES.forEach(u => {
+        const rec = upgradeEls[u.id];
+        const lvl = state.upgrades[u.id] || 0;
+        rec.level.textContent = 'Lv ' + lvl + '/' + u.costs.length;
+        if (lvl >= u.costs.length) {
+          rec.row.classList.add('maxed');
+          rec.btn.textContent = 'MAX ✓'; rec.btn.disabled = true;
+        } else {
+          rec.row.classList.remove('maxed');
+          rec.btn.textContent = 'Buy — ' + money(u.costs[lvl]);
+          rec.btn.disabled = state.money < u.costs[lvl];
+        }
+      });
+
+      PLANT_LOG.forEach(e => {
+        const rec = logEls[e.id];
+        if (!rec) return;
+        const got = !!(state.plantLog && state.plantLog[e.id]);
+        rec.row.classList.toggle('locked', !got);
+        rec.title.textContent = got ? e.title : '— LOCKED —';
+        rec.body.textContent = got ? e.body : ('Unlock: ' + e.cond + '.');
+      });
+      renderOrder();
+      renderIpo();
+      ACHIEVEMENTS.forEach(a => {
+        const rec = achEls[a.id];
+        const got = !!state.achievements[a.id];
+        rec.row.classList.toggle('locked', !got);
+        rec.check.textContent = got ? '✅' : '🔒';
+      });
+      $('statsBody').innerHTML =
+        statRow('Total clicks', fmt(state.stats.clicks)) +
+        statRow('Items sold', fmt(Math.floor(state.stats.itemsSold))) +
+        statRow('Products sold (lifetime)', fmt(Math.floor(totalProductsSoldOf(state)))) +
+        statRow('Machines owned', fmt(totalMachinesOf(state))) +
+        statRow('Contracts completed', fmt(state.stats.ordersCompleted)) +
+        statRow('Contracts missed', fmt(state.contractStats ? state.contractStats.missed : 0)) +
+        statRow('Contract streak', fmt(state.contractStats ? state.contractStats.streak : 0)) +
+        statRow('Contract value this run', money(state.runEarnings)) +
+        statRow('Buyouts completed', fmt(state.totalIPOs));
+    }
+    function statRow(label, val){ return '<div class="stat-row"><span>' + label + '</span><strong>' + val + '</strong></div>'; }
+
+    let orderSig = '';
+    function renderMobileOrderChrome(){
+      const o = state.order;
+      const badge = $('ordersBadge');
+      const banner = $('orderBanner');
+      if (badge || $('deskOrdersBadge')) {
+        const ready = !!o && o.status === 'active' && o.stockpile >= o.qty;
+        const showBadge = ready || !!(state.offers && state.offers.length);
+        if (badge) { badge.classList.toggle('show', showBadge); badge.textContent = ready ? '✓' : '!'; }
+        const db = $('deskOrdersBadge');
+        if (db) { db.classList.toggle('show', showBadge); db.textContent = ready ? '✓' : '!'; }
+      }
+      if (banner) {
+        if (o && o.status === 'active') {
+          const p = PRODUCTS[o.product];
+          const remain = Math.max(0, o.deadline - Date.now());
+          const mm = Math.floor(remain / 60000), ss = Math.floor((remain % 60000) / 1000);
+          const pct = Math.min(100, (o.stockpile / o.qty) * 100);
+          const lineMachine = MACHINES.find(x => x.kind === 'assemble' && x.product === o.product);
+          const pausedWarn = (lineMachine && lineMode(lineMachine) === 'paused')
+            ? '<span class="ob-warning">⚠️ ' + lineMachine.name + ' is HELD — this contract can\'t progress</span>' : '';
+          banner.innerHTML = '<span>' + (o.client ? 'CONTRACT — ' + o.client + ' · ' : '') + p.icon + ' ' + p.name + ': <strong>' + Math.floor(o.stockpile) + ' / ' + o.qty + '</strong> · ⏱ ' + mm + ':' + String(ss).padStart(2,'0') + (o.stockpile >= o.qty ? ' · Ready to deliver!' : '') + '</span>' + pausedWarn + '<div class="ob-track"><div class="ob-fill" style="width:' + pct + '%"></div></div>';
+          banner.classList.add('show');
+        } else {
+          banner.classList.remove('show');
+          banner.innerHTML = '';
+        }
+      }
+    }
+    function contractRecordLine(){
+      const cs = state.contractStats || { done:0, missed:0, streak:0 };
+      return '<p class="contract-record">Track record: <strong>' + cs.done + ' delivered</strong> · <strong>' + cs.missed + ' missed</strong> · current streak <strong>' + cs.streak + '</strong> — clients scale offer sizes to your record (up to +40%).</p>';
+    }
+    function renderOrder(){
+      renderMobileOrderChrome();
+      const box = $('orderBody');
+      const o = state.order;
+      if (!o && state.offers && state.offers.length) {
+        const sig = 'offers|' + state.offers.map(x => x.tier + ':' + x.product + ':' + x.qty + ':' + (x.client || '')).join(',') + '|' + ((state.contractStats && state.contractStats.done) || 0) + '|' + ((state.contractStats && state.contractStats.streak) || 0);
+        if (sig === orderSig) return;
+        orderSig = sig;
+        const cards = state.offers.map((of, i) => {
+          const p = PRODUCTS[of.product];
+          return '<div class="offer-card ' + of.tier + '"><span class="diff-tag ' + of.tier + '">' + of.tier.toUpperCase() + ' · ' + of.mult + '× PAY</span>' +
+            '<div class="order-title">' + p.icon + ' ' + of.qty + '× ' + p.name + '</div>' +
+            (of.client ? '<p class="order-meta client-line">CONTRACT — ' + of.client + '</p><p class="order-meta client-flavor">' + clientFlavor(of.client) + '</p>' : '') +
+            '<p class="order-meta">Reward: <strong>' + money(of.reward) + '</strong> (' + of.mult + '× base value)<br>' +
+            'You will have <strong>3 minutes</strong> after signing. While active, ' + p.name + ' production stockpiles instead of auto-selling.</p>' +
+            '<div class="order-actions"><button type="button" class="btn-green" data-accept-offer="' + i + '">✅ Sign the ' + of.tier + ' contract</button></div></div>';
+        }).join('');
+        box.innerHTML = contractRecordLine() + '<div class="offers-grid">' + cards + '</div>' +
+          '<div class="order-actions" style="margin-top:10px"><button type="button" id="dismissOffersBtn">Pass on all three</button></div>';
+        box.querySelectorAll('[data-accept-offer]').forEach(b => b.addEventListener('click', () => acceptOffer(parseInt(b.dataset.acceptOffer, 10))));
+        const d = $('dismissOffersBtn');
+        if (d) d.addEventListener('click', dismissOffers);
+        return;
+      }
+      if (!o) {
+        const hasLine = orderCandidates().length > 0;
+        const sig = 'none|' + hasLine + '|' + ((state.contractStats && state.contractStats.done) || 0) + '|' + ((state.contractStats && state.contractStats.missed) || 0) + '|' + ((state.contractStats && state.contractStats.streak) || 0);
+        if (sig === orderSig) return;
+        orderSig = sig;
+        box.innerHTML = contractRecordLine() + '<p class="order-empty">' + (hasLine
+          ? 'No contracts on the board right now — a new set of three offers (Easy · Medium · Hard) arrives soon. Hard contracts pay <strong>3.25× base value</strong>.'
+          : 'Get an assembly line running (Lamp Line, Calculator Line…) and clients will start posting contracts — three offers at a time, worth up to <strong>3.25× base value</strong>.') + '</p>';
+        return;
+      }
+      const p = PRODUCTS[o.product];
+      {
+        const remain = Math.max(0, o.deadline - Date.now());
+        const orderLineMachine = MACHINES.find(x => x.kind === 'assemble' && x.product === o.product);
+        const orderPaused = !!(orderLineMachine && lineMode(orderLineMachine) === 'paused');
+        const sig = 'active|' + o.product + '|' + o.qty + '|' + Math.floor(o.stockpile) + '|' + Math.ceil(remain / 1000) + '|' + (o.stockpile >= o.qty) + '|' + orderPaused + '|' + (o.autoPriorityApplied ? '1' : '0') + '|' + (o.prevMode || '') + '|' + (o.client || '');
+        if (sig === orderSig) return;
+        orderSig = sig;
+        const mm = Math.floor(remain / 60000), ss = Math.floor((remain % 60000) / 1000);
+        const pct = Math.min(100, (o.stockpile / o.qty) * 100);
+        const ready = o.stockpile >= o.qty;
+        const pausedHtml = orderPaused ? '<div class="order-warning">⚠️ ' + orderLineMachine.name + ' is HELD — this contract can\'t progress. Set it to NORMAL or EXPEDITE on the Floor → Assembly to resume.</div>' : '';
+        const autoNoteHtml = o.autoPriorityApplied ? '<p class="order-meta auto-prio-note">★ Auto-expedite: this line is set to EXPEDITE until the contract ends.</p>' : '';
+        box.innerHTML = '<div class="order-card active"><div class="order-title">' + p.icon + ' Contract: ' + p.name +
+          ' <span class="countdown' + (remain < 30000 ? ' urgent' : '') + '">⏱ ' + mm + ':' + String(ss).padStart(2,'0') + '</span></div>' +
+          (o.client ? '<p class="order-meta client-line">CONTRACT — ' + o.client + '</p>' : '') +
+          '<p class="order-meta">Stockpiled: <strong>' + Math.floor(o.stockpile) + ' / ' + o.qty + '</strong> · Reward: <strong>' + money(o.reward) + '</strong></p>' + autoNoteHtml + pausedHtml +
+          '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
+          '<div class="order-actions"><button type="button" class="btn-green" id="deliverOrderBtn" ' + (ready ? '' : 'disabled') + '>' +
+          (ready ? '🚚 Deliver Contract — ' + money(o.reward) : 'Producing… ' + Math.floor(o.stockpile) + '/' + o.qty) + '</button></div></div>';
+        $('deliverOrderBtn').addEventListener('click', deliverOrder);
+      }
+    }
+
+    let ipoSig = '';
+    function renderIpo(){
+      const avail = ipoSharesAvailable();
+      const sig = state.shares + '|' + avail + '|' + state.totalIPOs;
+      if (sig === ipoSig) {
+        const e = $('ipoRunEarnings');
+        if (e) e.textContent = money(state.runEarnings);
+        const n = $('ipoNextShare');
+        if (n) { const info = nextShareInfo(); n.textContent = money(info.nextAt) + ' run earnings (' + money(info.toGo) + ' to go)'; }
+        return;
+      }
+      ipoSig = sig;
+      const info = nextShareInfo();
+      $('ipoBody').innerHTML =
+        '<div class="ipo-stats">' +
+        '<span>Ownership Shares owned: <strong>' + fmt(state.shares) + '</strong></span>' +
+        '<span>Current bonus: <strong>+' + (state.shares * 5) + '% production speed &amp; sell prices</strong></span>' +
+        '<span>Earnings this run: <strong id="ipoRunEarnings">' + money(state.runEarnings) + '</strong></span>' +
+        '<span>Shares on buyout now: <strong>' + avail + '</strong> <span style="color:var(--muted)">(√(run earnings ÷ $100,000); first share at $5,000)</span></span>' +
+        '<span>Next share at: <strong id="ipoNextShare">' + money(info.nextAt) + ' run earnings (' + money(info.toGo) + ' to go)</strong></span></div>' +
+        '<button type="button" class="btn-ipo" id="ipoBtn" ' + (avail < 1 ? 'disabled' : '') + '>🏭 Sign the Buyout' + (avail >= 1 ? ' — earn ' + avail + ' share' + (avail === 1 ? '' : 's') : '') + '</button>' +
+        '<p class="hint">The buyout resets money, inventory, machines, upgrades and line modes (back to NORMAL) — but Ownership Shares, the Plant Record and lifetime stats are kept forever.</p>';
+      const b = $('ipoBtn');
+      if (b) b.addEventListener('click', openIpoModal);
+    }
+
+    /* ================= WIRING & INIT ================= */
+    document.querySelectorAll('[data-tab-btn]').forEach(b => b.addEventListener('click', () => setMobileTab(b.dataset.tabBtn)));
+    document.querySelectorAll('[data-view-btn]').forEach(b => b.addEventListener('click', () => setView(b.dataset.viewBtn)));
+    document.querySelectorAll('[data-fgroup-btn]').forEach(b => b.addEventListener('click', () => setFactoryGroup(b.dataset.fgroupBtn)));
+    const _ob = $('orderBanner'); if (_ob) _ob.addEventListener('click', () => { setMobileTab('orders'); setView('orders'); });
+    const _hb = $('harvestBtn'); if (_hb) _hb.addEventListener('click', doSmartHarvest);
+    setMobileTab('stock');
+    setFactoryGroup('gathering');
+    $('bulk1').addEventListener('click', () => { bulk = 1; $('bulk1').classList.add('active'); $('bulk10').classList.remove('active'); render(); });
+    $('bulk10').addEventListener('click', () => { bulk = 10; $('bulk10').classList.add('active'); $('bulk1').classList.remove('active'); render(); });
+    $('tutorialDismiss').addEventListener('click', () => { state.tutorial.done = true; renderTutorial(); save(); });
+    $('tutorialAction').addEventListener('click', () => {
+      if (state.tutorial.step === 3) { state.tutorial.done = true; renderTutorial(); save(); }
+      else toast('👆 Do what Doss says — the briefing advances as you work.', '');
+    });
+    $('replayTutorialBtn').addEventListener('click', () => {
+      state.tutorial = { step:0, done:false }; tutAdvance(); renderTutorial();
+      setMobileTab('stock');
+      setView('stores');
+      window.scrollTo({ top:0, behavior:'smooth' });
+      const layout = document.querySelector('.layout'); if (layout) layout.scrollTop = 0;
+      toast('📋 Foreman\'s Briefing restarted. Doss is waiting.', 'good');
+    });
+    document.querySelectorAll('.auto-prio-toggle').forEach(b => b.addEventListener('click', () => {
+      const next = !isAutoPrioritizeOn();
+      setAutoPrioritize(next);
+      toast(next ? '📋 Auto-expedite contract line: On — applies from the next contract you sign.' : '📋 Auto-expedite contract line: Off.', '');
+      render();
+    }));
+    $('exportBtn').addEventListener('click', exportSave);
+    $('copySaveBtn').addEventListener('click', copySave);
+    $('importBtn').addEventListener('click', importSave);
+    $('resetBtn').addEventListener('click', openResetModal);
+    $('modalOverlay').addEventListener('click', e => { if (e.target === $('modalOverlay')) closeModal(); });
+    const _pt = $('problemsToggle'); if (_pt) _pt.addEventListener('click', () => { const b = $('flowBoard'); const on = b.classList.toggle('problems-only'); _pt.setAttribute('aria-pressed', on ? 'true' : 'false'); _pt.classList.toggle('active', on); setTimeout(updateFlowEdges, 30); });
+    const _rm = $('resetModesBtn'); if (_rm) _rm.addEventListener('click', resetAllLineModes);
+    const _tb = $('tickerBottleneck'); if (_tb) _tb.addEventListener('click', () => { const id = _tb.dataset.machine; showView('floor'); if (id) setTimeout(() => highlightNode(id), 90); });
+    const _tc = $('tickerContract'); if (_tc) _tc.addEventListener('click', () => showView('orders'));
+    window.addEventListener('resize', () => updateFlowEdges());
+
+    const hadSave = load();
+    if (!hadSave) state.nextOfferAt = Date.now() + 15000;
+    if (state.lifetimeEarnings >= GATE_EARNINGS) state.unlocked2nd = true;
+    const offlineInfo = applyOffline();
+    checkPlantLog(true);
+    buildDOM();
+    setView(totalMachinesOf(state) > 0 ? 'floor' : 'stores');
+    applyGateVisibility();
+    tutAdvance();
+    render();
+    renderTutorial();
+    if (offlineInfo && (offlineInfo.moneyGain > 0 || Object.keys(offlineInfo.gains).length)) {
+      if (!state.storyIntroSeen) pendingWelcome = offlineInfo; else showWelcomeBack(offlineInfo);
+    }
+    if (!state.storyIntroSeen) showIntro();
+    if (orderExpiredAway) setTimeout(() => toast('⏰ A contract expired while you were away — its stockpile was sold at base price.', 'bad'), 600);
+
+    /* ================= DOUBLE-TAP ZOOM GUARD ================= */
+    /* Layered with touch-action:manipulation in CSS and the viewport meta.
+       The touchend guard suppresses double-tap zoom on non-interactive
+       surfaces. Taps on interactive controls (buttons, grid cells, toggles)
+       are deliberately NOT preventDefaulted here: touch-action:manipulation
+       already stops zoom on them, and eating their touchend would eat the
+       synthesized click — rapid SALVAGE taps must each register a harvest. */
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(e){
+      const now = Date.now();
+      const t = e.target;
+      const interactive = t && t.closest && t.closest('button, a, summary, textarea, input, select, label, .res-cell');
+      if (now - lastTouchEnd <= 300 && !interactive) e.preventDefault();
+      lastTouchEnd = now;
+    }, { passive:false });
+    document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+
+    /* ================= GAME LOOP ================= */
+    let lastTick = Date.now();
+    let saveCounter = 0;
+    setInterval(() => {
+      const now = Date.now();
+      let dt = (now - lastTick) / 1000;
+      lastTick = now;
+      if (dt > 1) dt = 1;               // tab-switch hiccup guard; real offline time is handled at load
+      if (dt > 0) runProduction(dt);
+      if (state.order && state.order.status === 'active' && now > state.order.deadline) { failOrder(false); }
+      maybeOfferOrder(now);
+      checkAchievements();
+      tutAdvance();
+      render();
+      if (++saveCounter >= 50) { saveCounter = 0; save(); }   // save every ~5s
+    }, 100);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+    window.addEventListener('pagehide', save);
+</script>
+</body>
+</html>
